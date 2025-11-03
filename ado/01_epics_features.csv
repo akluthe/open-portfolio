@@ -1,0 +1,32 @@
+\
+Work Item Type,Title,Description,Area Path,Iteration Path,Parent
+\
+Epic,EPIC A — Platform Foundation,"Repo, infra, DB, baseline API, baseline web render.","ResumePlatform","\Sprint 1",
+\
+Epic,EPIC B — Resume Editing,"Local admin editing, then auth.","ResumePlatform","\Sprint 2",
+\
+Epic,EPIC C — Polish & Extras,"PDF export, observability, CI/CD & deploy.","ResumePlatform","\Sprint 3",
+\
+
+\
+Feature,FEAT A1 — Codebase + Local Dev,"Monorepo; Next.js; .NET API skeleton; Postgres docker-compose; Makefile.","ResumePlatform","\Sprint 1","EPIC A — Platform Foundation"
+\
+Feature,FEAT A2 — Data Schema + Seed,"Zod ResumeDoc; Postgres JSONB table; seed `main`.","ResumePlatform","\Sprint 1","EPIC A — Platform Foundation"
+\
+Feature,FEAT A3 — Minimal API (Read),"GET /resumes/:slug; health endpoint.","ResumePlatform","\Sprint 1","EPIC A — Platform Foundation"
+\
+Feature,FEAT A4 — Public Resume View,"Next.js `/r/main` SSR from API; print CSS.","ResumePlatform","\Sprint 1","EPIC A — Platform Foundation"
+\
+
+\
+Feature,FEAT B1 — Admin Editing (Local),"`/admin/main` form; Zod validation; PUT upsert; dev-only flag.","ResumePlatform","\Sprint 2","EPIC B — Resume Editing"
+\
+Feature,FEAT B2 — Auth for Admin,"GitHub OAuth; protect admin routes.","ResumePlatform","\Sprint 2","EPIC B — Resume Editing"
+\
+
+\
+Feature,FEAT C1 — PDF Export,"Node+Playwright microservice; ‘Download PDF’.","ResumePlatform","\Sprint 3","EPIC C — Polish & Extras"
+\
+Feature,FEAT C2 — Observability,"OpenTelemetry web→api; OTEL Collector; trace ID surfaced.","ResumePlatform","\Sprint 3","EPIC C — Polish & Extras"
+\
+Feature,FEAT C3 — CI/CD & Deploy,"Dockerfiles; GH Actions; Helm chart; ingress.","ResumePlatform","\Sprint 3","EPIC C — Polish & Extras"

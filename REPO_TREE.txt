@@ -1,0 +1,54 @@
+\
+resume-platform/
+\
+├─ apps/
+\
+│  ├─ web/                     # Next.js (React/TS)
+\
+│  ├─ api-resume/              # .NET 8 Minimal API
+\
+│  └─ svc-pdf/                 # (Stretch) Node PDF service
+\
+├─ packages/
+\
+│  ├─ shared-types/            # Zod schemas
+\
+│  └─ shared-telemetry/        # (Stretch) OTEL helpers/docs
+\
+├─ infra/
+\
+│  ├─ compose/                 # docker-compose files
+\
+│  ├─ postgres/                # init.sql
+\
+│  ├─ otel/                    # (Stretch) OTEL Collector config
+\
+│  └─ helm/                    # (Stretch) Helm chart
+\
+├─ docs/
+\
+│  ├─ series/                  # episode posts
+\
+│  └─ adr/                     # ADRs (MADR style)
+\
+├─ .github/
+\
+│  ├─ workflows/               # (Stretch) CI
+\
+│  ├─ copilot-instructions.md
+\
+│  └─ copilot-chat-recipes.md
+\
+├─ .vscode/
+\
+│  ├─ settings.json
+\
+│  └─ extensions.json
+\
+├─ .editorconfig
+\
+├─ .gitignore
+\
+├─ Makefile
+\
+└─ REPO_TREE.txt

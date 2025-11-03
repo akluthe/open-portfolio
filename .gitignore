@@ -1,0 +1,23 @@
+\
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+*.log
+.next/
+.out/
+coverage/
+
+# Dotnet
+bin/
+obj/
+*.user
+*.suo
+
+# Docker
+**/.env.local
+
+# Misc
+.env
+.env.*
