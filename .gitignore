@@ -22,5 +22,5 @@ obj/
 .env
 .env.*
 
-# Agent instructions (private guidance)
-agent-instructions/
+# VS Code (including agent instructions)
+.vscode/
