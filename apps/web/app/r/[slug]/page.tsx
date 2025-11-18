@@ -16,7 +16,19 @@ export default async function ResumePage({ params }: ResumePageProps) {
     notFound();
   }
 
-  return <ResumeView resume={resume} />;
+  return (
+    <>
+      <div className="resume-actions" aria-label="Resume downloads">
+        <a className="resume-action" href={`/api/resumes/${params.slug}/typst`} download>
+          Download Typst
+        </a>
+        <a className="resume-action" href={`/api/resumes/${params.slug}/pdf`} download>
+          Download PDF
+        </a>
+      </div>
+      <ResumeView resume={resume} />
+    </>
+  );
 }
 
 export async function generateMetadata({ params }: ResumePageProps): Promise<Metadata> {
