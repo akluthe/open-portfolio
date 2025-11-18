@@ -25,12 +25,13 @@ if (app.Environment.IsDevelopment())
 }
 
 // GET /resumes/{slug} using service
-app.MapGet("/resumes/{slug}", async (string slug, IResumeDbService db) =>
-{
-    var json = await db.GetResumeJsonBySlugAsync(slug);
-    return json is not null
-        ? Results.Content(json, "application/json")
-        : Results.NotFound();
-});
+app.MapGet(
+    "/resumes/{slug}",
+    async (string slug, IResumeDbService db) =>
+    {
+        var json = await db.GetResumeJsonBySlugAsync(slug);
+        return json is not null ? Results.Content(json, "application/json") : Results.NotFound();
+    }
+);
 
 app.Run();
