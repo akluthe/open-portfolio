@@ -21,3 +21,6 @@ obj/
 # Misc
 .env
 .env.*
+
+# Agent instructions (private guidance)
+agent-instructions/
