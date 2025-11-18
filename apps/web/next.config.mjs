@@ -3,6 +3,7 @@ const nextConfig = {
   experimental: {
     externalDir: true
   },
+  transpilePackages: ['@resume-platform/shared-types'],
   eslint: {
     dirs: ['app', 'components', 'lib']
   }

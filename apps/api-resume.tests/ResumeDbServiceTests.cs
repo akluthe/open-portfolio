@@ -51,6 +51,59 @@ public class ResumeDbServiceTests : IClassFixture<PostgresResumeFixture>
         AssertJsonEqual(targetJson, result);
     }
 
+    [Fact]
+    public async Task UpsertResumeAsync_creates_new_resume_when_slug_does_not_exist()
+    {
+        await _fixture.ResetAsync();
+        var slug = CreateSlug();
+        var resumeJson = CreateResumeJson("New User", "Developer");
+
+        await CreateSut().UpsertResumeAsync(slug, resumeJson);
+
+        var result = await CreateSut().GetResumeJsonBySlugAsync(slug);
+        Assert.NotNull(result);
+        AssertJsonEqual(resumeJson, result);
+    }
+
+    [Fact]
+    public async Task UpsertResumeAsync_updates_existing_resume_when_slug_exists()
+    {
+        await _fixture.ResetAsync();
+        var slug = CreateSlug();
+        var originalJson = CreateResumeJson("Original User", "Engineer");
+        await InsertResumeAsync(slug, originalJson);
+
+        var updatedJson = CreateResumeJson("Updated User", "Senior Engineer");
+        await CreateSut().UpsertResumeAsync(slug, updatedJson);
+
+        var result = await CreateSut().GetResumeJsonBySlugAsync(slug);
+        Assert.NotNull(result);
+        AssertJsonEqual(updatedJson, result);
+    }
+
+    [Fact]
+    public async Task UpsertResumeAsync_updates_last_mod_tsp()
+    {
+        await _fixture.ResetAsync();
+        var slug = CreateSlug();
+        var resumeJson = CreateResumeJson("Test User", "Engineer");
+        await InsertResumeAsync(slug, resumeJson);
+
+        // Get initial timestamp
+        var initialTimestamp = await GetLastModTimestampAsync(slug);
+
+        // Wait a moment to ensure timestamp difference
+        await Task.Delay(100);
+
+        // Upsert the resume
+        await CreateSut().UpsertResumeAsync(slug, resumeJson);
+
+        // Get updated timestamp
+        var updatedTimestamp = await GetLastModTimestampAsync(slug);
+
+        Assert.True(updatedTimestamp > initialTimestamp, "last_mod_tsp should be updated");
+    }
+
     private ResumeDbService CreateSut() => new(_fixture.ConnectionString);
 
     private static string CreateSlug() => $"slug-{Guid.NewGuid():N}";
@@ -82,5 +135,18 @@ public class ResumeDbServiceTests : IClassFixture<PostgresResumeFixture>
         using var expected = JsonDocument.Parse(expectedJson);
         using var actual = JsonDocument.Parse(actualJson);
         Assert.True(JsonElement.DeepEquals(actual.RootElement, expected.RootElement), "JSON payloads differ");
+    }
+
+    private async Task<DateTime> GetLastModTimestampAsync(string slug)
+    {
+        await using var conn = new NpgsqlConnection(_fixture.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand(
+            "SELECT last_mod_tsp FROM resumes WHERE slug = @slug",
+            conn
+        );
+        cmd.Parameters.AddWithValue("slug", slug);
+        var result = await cmd.ExecuteScalarAsync();
+        return result is DateTime dt ? dt : throw new InvalidOperationException("Timestamp not found");
     }
 }

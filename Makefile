@@ -6,6 +6,7 @@ API_PROJECT=apps/api-resume/api-resume.csproj
 API_TEST_PROJECT=apps/api-resume.tests/api-resume.tests.csproj
 WEB_DIR=apps/web
 RESUME_API ?= http://localhost:5152
+FEATURE_ADMIN_EDITING=true
 
 up:
 	docker compose -f $(COMPOSE) up -d
@@ -33,7 +34,7 @@ api:
 	dotnet watch run --project $(API_PROJECT)
 
 web:
-	RESUME_API=$(RESUME_API) npm run dev --prefix $(WEB_DIR)
+	RESUME_API=$(RESUME_API) FEATURE_ADMIN_EDITING=$(FEATURE_ADMIN_EDITING) npm run dev --prefix $(WEB_DIR)
 
 api-test:
 	dotnet test $(API_TEST_PROJECT)

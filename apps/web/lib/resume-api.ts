@@ -32,3 +32,30 @@ async function requestResume(slug: string): Promise<ResumeDocument | null> {
 }
 
 export const fetchResumeBySlug = cache((slug: string) => requestResume(slug));
+
+export async function updateResumeBySlug(
+  slug: string,
+  resume: ResumeDocument
+): Promise<ResumeDocument> {
+  const response = await fetch(`${getApiBaseUrl()}/resumes/${encodeURIComponent(slug)}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    },
+    body: JSON.stringify(resume),
+    cache: 'no-store'
+  });
+
+  if (response.status === 400) {
+    const error = await response.json().catch(() => ({ error: 'Validation failed' }));
+    throw new Error(error.error || 'Validation failed');
+  }
+
+  if (!response.ok) {
+    throw new Error(`Resume API update failed (${response.status})`);
+  }
+
+  const json = await response.json();
+  return resumeSchema.parse(json);
+}
