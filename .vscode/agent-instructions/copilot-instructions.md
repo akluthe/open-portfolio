@@ -12,6 +12,7 @@ Keep responsibilities separate in prompts and implementations. Below are focused
 - No ORM: use Npgsql directly and parameterized SQL. Keep data access behind a small service layer (IResumeDbService).
 - Store resume documents as JSONB in Postgres; use `slug` for lookups.
 - Surface simple endpoints: GET /resumes/{slug}, PUT /resumes/{slug} (upsert), and GET /healthz.
+- Favor lightweight integration coverage (curl scripts or xUnit + testcontainers) so GET/PUT/healthz stay demo-ready.
 
 Suggested prompts for API work:
 - "Create a minimal .NET Minimal API handler for GET /resumes/{slug} using Npgsql and return JSONB content or 404."
@@ -22,6 +23,7 @@ Suggested prompts for API work:
 - Use App Router server components to fetch resume JSON server-side.
 - Keep Zod schemas in `packages/shared-types` and reuse them in the web for validation.
 - Implement a print-friendly CSS profile optimized to fit 1–2 pages.
+- Gate dev-only surfaces (admin editor, feature toggles) behind explicit env flags so the public site stays clean.
 
 Suggested prompts for web work:
 - "Create a Next.js server component at /r/[slug] that fetches RESUME_API/resumes/{slug} server-side and renders a printable resume layout."
@@ -29,6 +31,11 @@ Suggested prompts for web work:
 
 ## Cross-cutting
 - Prefer server rendering for the public resume to keep content SEO-friendly and reproducible for PDF.
+- Parse/validate resume JSON with the shared Zod schema in both API and web layers to avoid drift.
 - Reuse print CSS across web and PDF generator.
+
+## Workflow
+- Keep API and Web changes in focused, separate commits/PRs when practical.
+- Update `docs/series` after each episode-level milestone so instructions and demos never drift.
 
 Use these focused prompts when asking the assistant to generate code to avoid mixing responsibilities.
