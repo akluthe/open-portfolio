@@ -1,0 +1,63 @@
+{
+	"version": "2.0.0",
+	"inputs": [
+		{
+			"id": "resumeApiUrl",
+			"type": "promptString",
+			"description": "Resume API base URL exposed to the Next.js dev server",
+			"default": "http://localhost:5152"
+		}
+	],
+	"tasks": [
+		{
+			"label": "Start Docker Compose",
+			"type": "shell",
+			"command": "docker compose -f ./infra/compose/docker-compose.yml up",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Start .NET API",
+			"type": "shell",
+			"command": "dotnet watch run --project ./apps/api-resume/api-resume.csproj",
+			"isBackground": true,
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Start Next Dev Server",
+			"type": "shell",
+			"command": "npm run dev --prefix apps/web",
+			"isBackground": true,
+			"options": {
+				"env": {
+					"RESUME_API": "${input:resumeApiUrl}"
+				}
+			},
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Lint Next.js",
+			"type": "shell",
+			"command": "npm run lint --prefix apps/web",
+			"group": "test",
+			"problemMatcher": [
+				"$eslint-stylish"
+			]
+		},
+		{
+			"label": "Verify .NET Formatting",
+			"type": "shell",
+			"command": "dotnet format --verify-no-changes",
+			"group": "test",
+			"problemMatcher": []
+		}
+	]
+}

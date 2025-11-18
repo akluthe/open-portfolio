@@ -1,0 +1,18 @@
+\
+{
+  "editor.formatOnSave": true,
+  "files.eol": "\n",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[csharp]": { "editor.defaultFormatter": "charpier.charpier" },
+  "eslint.validate": ["javascript", "typescript", "typescriptreact"],
+  "prettier.requireConfig": true,
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": ".vscode/-instructions/copilot-instructions.md"
+    },
+    {
+      "file": ".vscode/agent-instructions/copilot-chat-recipes.md"
+    }
+  ]
+}
