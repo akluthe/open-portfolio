@@ -17,11 +17,7 @@ export default clerkMiddleware(async (auth, req) => {
 export const config = {
   // Match all routes except Next.js internals and static files
   // This ensures Clerk middleware runs on all pages and API routes
-  matcher: [
-    // Skip Next.js internals, static files, and image optimization
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-    // Include API routes
-    '/(api|trpc)(.*)',
-  ],
+  // so that currentUser() and auth() work in server components
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
 
