@@ -1,24 +1,47 @@
 import { notFound } from 'next/navigation';
-import { getFeatureFlag } from '@/lib/feature-flags';
+import { currentUser } from '@clerk/nextjs/server';
 import { fetchResumeBySlug } from '@/lib/resume-api';
 import ResumeEditForm from '@/components/admin/resume-edit-form';
+import LogoutButton from '@/components/admin/logout-button';
 
 type AdminPageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export default async function AdminPage({ params }: AdminPageProps) {
-  // Check if admin editing is enabled via feature flag
-  const isAdminEnabled = await getFeatureFlag('admin-editing', false);
+  // Check authentication - middleware will redirect if not authenticated
+  const user = await currentUser();
 
-  if (!isAdminEnabled) {
+  if (!user) {
     notFound();
   }
 
+  // Check if user is authorized (GitHub username must be in allowed list)
+  // If ALLOWED_ADMIN_GITHUB_USERNAMES is not set or empty, allow all authenticated users
+  const allowedAdminsStr = process.env.ALLOWED_ADMIN_GITHUB_USERNAMES || '';
+  const allowedAdmins = allowedAdminsStr
+    .split(',')
+    .map(u => u.trim())
+    .filter(u => u.length > 0); // Filter out empty strings
+  const isAuthorized = allowedAdmins.length === 0 || allowedAdmins.includes(user.username || '');
+
+  if (!isAuthorized) {
+    return (
+      <div className="admin-page">
+        <div className="admin-error">
+          <h1>Access Denied</h1>
+          <p>Your GitHub account ({user.username}) is not authorized to access the admin panel.</p>
+          <p>Please contact the administrator to request access.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { slug } = await params;
   // Fetch the current resume
-  const resume = await fetchResumeBySlug(params.slug);
+  const resume = await fetchResumeBySlug(slug);
 
   if (!resume) {
     notFound();
@@ -27,12 +50,18 @@ export default async function AdminPage({ params }: AdminPageProps) {
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <h1>Edit Resume: {params.slug}</h1>
-        <a href={`/r/${params.slug}`} className="admin-link">
-          View Public Resume →
-        </a>
+        <div>
+          <h1>Edit Resume: {slug}</h1>
+          <p className="admin-user-info">Logged in as: {user.username || user.firstName || user.emailAddresses[0]?.emailAddress}</p>
+        </div>
+        <div className="admin-header-actions">
+          <a href={`/r/${slug}`} className="admin-link">
+            View Public Resume →
+          </a>
+          <LogoutButton />
+        </div>
       </div>
-      <ResumeEditForm slug={params.slug} initialResume={resume} />
+      <ResumeEditForm slug={slug} initialResume={resume} />
     </div>
   );
 }

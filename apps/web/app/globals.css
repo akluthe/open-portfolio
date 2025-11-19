@@ -141,15 +141,31 @@ main {
 .admin-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid #111;
 }
 
+.admin-header > div:first-child {
+  flex: 1;
+}
+
 .admin-header h1 {
-  margin: 0;
+  margin: 0 0 0.5rem;
   font-size: 1.75rem;
+}
+
+.admin-user-info {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.admin-header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 
 .admin-link {
@@ -350,6 +366,104 @@ main {
   border-radius: 4px;
   margin-bottom: 1.5rem;
   border: 1px solid #66bb6a;
+}
+
+/* Login page styles */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.login-container {
+  background: #fff;
+  padding: 3rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-container h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  text-align: center;
+}
+
+.login-container > p {
+  margin: 0 0 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.login-error {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #ef5350;
+  text-align: center;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.login-field label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.login-field input {
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.login-field input:focus {
+  outline: none;
+  border-color: #111;
+  box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.1);
+}
+
+.login-field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #111;
+  color: #fff;
+  border: 1px solid #111;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-family: inherit;
+}
+
+.login-button:hover:not(:disabled) {
+  background-color: #333;
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media print {

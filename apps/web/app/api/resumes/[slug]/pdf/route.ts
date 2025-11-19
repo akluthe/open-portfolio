@@ -4,9 +4,10 @@ import { fetchResumeBySlug } from '@/lib/resume-api';
 import { buildTypstSource } from '@/lib/resume-typst';
 import { renderTypstPdf } from '@/lib/typst-pdf';
 
-export async function GET(_request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const resume = await fetchResumeBySlug(params.slug);
+    const { slug } = await params;
+    const resume = await fetchResumeBySlug(slug);
 
     if (!resume) {
       return NextResponse.json({ message: 'Resume not found' }, { status: 404 });
@@ -14,7 +15,7 @@ export async function GET(_request: NextRequest, { params }: { params: { slug: s
 
     const typstSource = await buildTypstSource(resume);
     const pdfBytes = await renderTypstPdf(typstSource);
-    const filename = `${params.slug}.pdf`;
+    const filename = `${slug}.pdf`;
 
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,

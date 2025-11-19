@@ -1,4 +1,4 @@
-import type { ResumeDocument } from '@resume-platform/shared-types';
+import type { ResumeDocument } from '@/lib/shared-types';
 
 type ResumeViewProps = {
   resume: ResumeDocument;

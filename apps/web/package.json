@@ -12,10 +12,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.35.2",
     "@myriaddreamin/typst-ts-web-compiler": "^0.6.1-rc5",
     "@myriaddreamin/typst.ts": "0.6.1-rc5",
     "@openfeature/server-sdk": "^1.20.0",
-    "next": "14.2.5",
+    "@resume-platform/shared-types": "file:../../packages/shared-types",
+    "jsonwebtoken": "^9.0.2",
+    "next": "^16.0.3",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "zod": "^3.23.8"
@@ -23,6 +26,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "6.4.8",
     "@testing-library/react": "15.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "20.12.12",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",

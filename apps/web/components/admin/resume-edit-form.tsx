@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ResumeDocument, ResumeExperience } from '@resume-platform/shared-types';
-import { resumeSchema } from '@resume-platform/shared-types';
+import type { ResumeDocument, ResumeExperience } from '@/lib/shared-types';
+import { resumeSchema } from '@/lib/shared-types';
 
 type ResumeEditFormProps = {
   slug: string;

@@ -4,13 +4,14 @@ import ResumeView from '@/components/resume/resume-view';
 import { fetchResumeBySlug } from '@/lib/resume-api';
 
 type ResumePageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export default async function ResumePage({ params }: ResumePageProps) {
-  const resume = await fetchResumeBySlug(params.slug);
+  const { slug } = await params;
+  const resume = await fetchResumeBySlug(slug);
 
   if (!resume) {
     notFound();
@@ -19,10 +20,10 @@ export default async function ResumePage({ params }: ResumePageProps) {
   return (
     <>
       <div className="resume-actions" aria-label="Resume downloads">
-        <a className="resume-action" href={`/api/resumes/${params.slug}/typst`} download>
+        <a className="resume-action" href={`/api/resumes/${slug}/typst`} download>
           Download Typst
         </a>
-        <a className="resume-action" href={`/api/resumes/${params.slug}/pdf`} download>
+        <a className="resume-action" href={`/api/resumes/${slug}/pdf`} download>
           Download PDF
         </a>
       </div>
@@ -33,7 +34,8 @@ export default async function ResumePage({ params }: ResumePageProps) {
 
 export async function generateMetadata({ params }: ResumePageProps): Promise<Metadata> {
   try {
-    const resume = await fetchResumeBySlug(params.slug);
+    const { slug } = await params;
+    const resume = await fetchResumeBySlug(slug);
 
     if (!resume) {
       return {

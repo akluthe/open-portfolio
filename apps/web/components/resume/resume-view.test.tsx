@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { ResumeDocument } from '@resume-platform/shared-types';
+import type { ResumeDocument } from '@/lib/shared-types';
 import ResumeView from './resume-view';
 
 const baseResume: ResumeDocument = {

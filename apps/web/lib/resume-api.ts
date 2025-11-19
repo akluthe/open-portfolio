@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { resumeSchema, type ResumeDocument } from '@resume-platform/shared-types';
+import { resumeSchema, type ResumeDocument } from '@/lib/shared-types';
 
 function getApiBaseUrl() {
   const value = process.env.RESUME_API;
@@ -35,14 +35,18 @@ export const fetchResumeBySlug = cache((slug: string) => requestResume(slug));
 
 export async function updateResumeBySlug(
   slug: string,
-  resume: ResumeDocument
+  resume: ResumeDocument,
+  token: string
 ): Promise<ResumeDocument> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+
   const response = await fetch(`${getApiBaseUrl()}/resumes/${encodeURIComponent(slug)}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
+    headers,
     body: JSON.stringify(resume),
     cache: 'no-store'
   });

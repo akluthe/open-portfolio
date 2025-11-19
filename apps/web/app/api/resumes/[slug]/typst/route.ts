@@ -2,16 +2,17 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { fetchResumeBySlug } from '@/lib/resume-api';
 import { buildTypstSource } from '@/lib/resume-typst';
 
-export async function GET(_request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const resume = await fetchResumeBySlug(params.slug);
+    const { slug } = await params;
+    const resume = await fetchResumeBySlug(slug);
 
     if (!resume) {
       return NextResponse.json({ message: 'Resume not found' }, { status: 404 });
     }
 
     const typstSource = await buildTypstSource(resume);
-    const filename = `${params.slug}.typ`;
+    const filename = `${slug}.typ`;
 
     return new NextResponse(typstSource, {
       status: 200,

@@ -3,6 +3,78 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddOpenApi();
 
+// Get Clerk configuration
+var clerkPublishableKey = builder.Configuration["CLERK_PUBLISHABLE_KEY"];
+var clerkSecretKey = builder.Configuration["CLERK_SECRET_KEY"];
+
+// For development, you can use a simple secret if Clerk isn't configured yet
+// In production, always use Clerk JWKS validation
+var useClerk = !string.IsNullOrWhiteSpace(clerkPublishableKey) && !string.IsNullOrWhiteSpace(clerkSecretKey);
+
+if (useClerk)
+{
+    // Configure JWT Authentication with Clerk
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        // Clerk uses JWKS (JSON Web Key Set) for token validation
+        // Extract the frontend API URL from the publishable key format: pk_test_xxxxx
+        // The JWKS endpoint is: https://{your-clerk-domain}/.well-known/jwks.json
+        var keyParts = clerkPublishableKey?.Split('_');
+        if (keyParts != null && keyParts.Length >= 2)
+        {
+            var clerkDomain = keyParts[1]; // e.g., "test" or "live"
+            options.Authority = $"https://{clerkDomain}.clerk.accounts.dev";
+        }
+        else
+        {
+            throw new InvalidOperationException("Invalid CLERK_PUBLISHABLE_KEY format. Expected format: pk_test_xxxxx or pk_live_xxxxx");
+        }
+        
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = false, // Clerk doesn't use audience validation by default
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+}
+else
+{
+    // Fallback to simple secret validation for development
+    var jwtSecret = builder.Configuration["JWT_SECRET"] 
+        ?? builder.Configuration["AUTH_SECRET"]
+        ?? throw new InvalidOperationException("Either Clerk keys (CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY) or JWT_SECRET/AUTH_SECRET must be configured.");
+    
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(jwtSecret)
+            ),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+}
+
+builder.Services.AddAuthorization();
+
 // Add DB connection string from config
 builder.Services.AddSingleton<string>(sp =>
     builder.Configuration.GetConnectionString("DefaultConnection")
@@ -24,6 +96,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// Use authentication and authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
+
 // GET /resumes/{slug} using service
 app.MapGet(
     "/resumes/{slug}",
@@ -34,11 +110,12 @@ app.MapGet(
     }
 );
 
-// PUT /resumes/{slug} using service
+// PUT /resumes/{slug} using service - requires authentication
 app.MapPut(
     "/resumes/{slug}",
-    async (string slug, HttpRequest request, IResumeDbService db) =>
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, HttpRequest request, IResumeDbService db) =>
     {
+
         try
         {
             // Read JSON body

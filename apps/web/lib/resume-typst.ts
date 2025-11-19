@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import type { ResumeDocument } from '@resume-platform/shared-types';
+import type { ResumeDocument } from '@/lib/shared-types';
 
 const TEMPLATE_PLACEHOLDER = '{{CONTENT}}';
 const TEMPLATE_PATH = path.join(process.cwd(), 'templates', 'resume.typ');
