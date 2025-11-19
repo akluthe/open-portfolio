@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ResumeView from '@/components/resume/resume-view';
 import { fetchResumeBySlug } from '@/lib/resume-api';
+import { isAdmin } from '@/lib/admin-auth';
 
 type ResumePageProps = {
   params: Promise<{
@@ -17,9 +18,16 @@ export default async function ResumePage({ params }: ResumePageProps) {
     notFound();
   }
 
+  const userIsAdmin = await isAdmin();
+
   return (
     <>
       <div className="resume-actions" aria-label="Resume downloads">
+        {userIsAdmin && (
+          <a className="resume-action" href={`/admin/${slug}`}>
+            Edit Resume
+          </a>
+        )}
         <a className="resume-action" href={`/api/resumes/${slug}/typst`} download>
           Download Typst
         </a>

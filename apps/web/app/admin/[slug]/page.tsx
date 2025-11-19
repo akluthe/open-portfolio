@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
 import { fetchResumeBySlug } from '@/lib/resume-api';
+import { isAdmin } from '@/lib/admin-auth';
 import ResumeEditForm from '@/components/admin/resume-edit-form';
 import LogoutButton from '@/components/admin/logout-button';
 
@@ -18,14 +19,8 @@ export default async function AdminPage({ params }: AdminPageProps) {
     notFound();
   }
 
-  // Check if user is authorized (GitHub username must be in allowed list)
-  // If ALLOWED_ADMIN_GITHUB_USERNAMES is not set or empty, allow all authenticated users
-  const allowedAdminsStr = process.env.ALLOWED_ADMIN_GITHUB_USERNAMES || '';
-  const allowedAdmins = allowedAdminsStr
-    .split(',')
-    .map(u => u.trim())
-    .filter(u => u.length > 0); // Filter out empty strings
-  const isAuthorized = allowedAdmins.length === 0 || allowedAdmins.includes(user.username || '');
+  // Check if user is authorized as admin
+  const isAuthorized = await isAdmin();
 
   if (!isAuthorized) {
     return (
