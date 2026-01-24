@@ -22,26 +22,50 @@ if (useClerk)
     .AddJwtBearer(options =>
     {
         // Clerk uses JWKS (JSON Web Key Set) for token validation
-        // Extract the frontend API URL from the publishable key format: pk_test_xxxxx
-        // The JWKS endpoint is: https://{your-clerk-domain}/.well-known/jwks.json
-        var keyParts = clerkPublishableKey?.Split('_');
-        if (keyParts != null && keyParts.Length >= 2)
+        // The JWKS endpoint format is: https://{instance-id}.clerk.accounts.dev/.well-known/jwks.json
+        // The instance ID can be found in your Clerk dashboard
+        var clerkInstanceId = builder.Configuration["CLERK_INSTANCE_ID"];
+        
+        if (string.IsNullOrWhiteSpace(clerkInstanceId))
         {
-            var clerkDomain = keyParts[1]; // e.g., "test" or "live"
-            options.Authority = $"https://{clerkDomain}.clerk.accounts.dev";
+            // Try to extract from the publishable key (base64 encoded data after pk_test_)
+            // This is a fallback - it's better to set CLERK_INSTANCE_ID explicitly
+            if (!string.IsNullOrWhiteSpace(clerkPublishableKey) && clerkPublishableKey.StartsWith("pk_"))
+            {
+                try
+                {
+                    // The publishable key format is: pk_test_<base64-encoded-instance-info>
+                    // We can try to decode it, but it's more reliable to set CLERK_INSTANCE_ID
+                    // For now, we'll require it to be set explicitly
+                }
+                catch
+                {
+                    // Ignore decode errors
+                }
+            }
+            
+            throw new InvalidOperationException(
+                "CLERK_INSTANCE_ID must be set in configuration. " +
+                "You can find your instance ID in the Clerk dashboard: " +
+                "1. Go to your Clerk dashboard, 2. Navigate to API Keys, 3. The instance ID is shown there. " +
+                "Alternatively, check the issuer claim in a JWT token from Clerk - it will be: https://{instance-id}.clerk.accounts.dev"
+            );
         }
-        else
-        {
-            throw new InvalidOperationException("Invalid CLERK_PUBLISHABLE_KEY format. Expected format: pk_test_xxxxx or pk_live_xxxxx");
-        }
+        
+        // Set the Authority to the Clerk JWKS endpoint
+        var clerkAuthority = $"https://{clerkInstanceId}.clerk.accounts.dev";
+        options.Authority = clerkAuthority;
+        options.MetadataAddress = $"{clerkAuthority}/.well-known/jwks.json";
         
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateIssuer = true,
+            // Clerk issuer format: https://{instance-id}.clerk.accounts.dev
+            ValidIssuer = clerkAuthority,
             ValidateAudience = false, // Clerk doesn't use audience validation by default
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.FromMinutes(5) // Allow some clock skew
         };
     });
 }

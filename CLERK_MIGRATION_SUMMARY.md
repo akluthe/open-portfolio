@@ -53,7 +53,8 @@ FEATURE_ADMIN_EDITING=true
 ```json
 {
   "CLERK_PUBLISHABLE_KEY": "pk_test_xxxxx",
-  "CLERK_SECRET_KEY": "sk_test_xxxxx"
+  "CLERK_SECRET_KEY": "sk_test_xxxxx",
+  "CLERK_INSTANCE_ID": "your-instance-id"
 }
 ```
 
@@ -85,4 +86,3 @@ The old JWT system is completely removed. If you need to roll back, you'd need t
 4. Restore old middleware and auth logic
 
 However, Clerk is the recommended approach for production use.
-

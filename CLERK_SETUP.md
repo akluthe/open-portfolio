@@ -42,6 +42,7 @@ In your Clerk dashboard:
 2. Copy the following:
    - **Publishable Key** (starts with `pk_test_` or `pk_live_`)
    - **Secret Key** (starts with `sk_test_` or `sk_live_`)
+   - **Instance ID** (used to validate JWT issuer and JWKS URL)
 
 ## Step 4: Configure Environment Variables
 
@@ -65,7 +66,8 @@ FEATURE_ADMIN_EDITING=true
 ```json
 {
   "CLERK_PUBLISHABLE_KEY": "pk_test_xxxxx",
-  "CLERK_SECRET_KEY": "sk_test_xxxxx"
+  "CLERK_SECRET_KEY": "sk_test_xxxxx",
+  "CLERK_INSTANCE_ID": "your-instance-id"
 }
 ```
 
@@ -73,6 +75,7 @@ Or set as environment variables:
 ```bash
 export CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
 export CLERK_SECRET_KEY=sk_test_xxxxx
+export CLERK_INSTANCE_ID=your-instance-id
 ```
 
 ## Step 5: Test the Integration
@@ -157,4 +160,3 @@ To restrict admin access to specific GitHub users:
 - Add more social providers (Google, Microsoft, etc.)
 - Set up user roles and permissions in Clerk
 - Configure session management and token expiration
-
