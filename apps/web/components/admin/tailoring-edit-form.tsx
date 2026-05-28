@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ResumeDocument, TailoringProfile } from '@/lib/shared-types';
 import { tailoringProfileSchema } from '@/lib/shared-types';
+import {
+  profileToFormState,
+  formStateToProfile,
+  TAILORING_SECTIONS,
+  type ExperienceRuleState,
+  type TailoringSection
+} from '@/lib/tailoring-form';
 
 type TailoringEditFormProps = {
   slug: string;
@@ -11,48 +18,20 @@ type TailoringEditFormProps = {
   initialProfile: TailoringProfile;
 };
 
-type ExperienceState = {
-  included: boolean;
-  hiddenHighlights: Set<number>;
-};
-
-const SECTION_TOGGLES = ['projects', 'education', 'skills'] as const;
-type ToggleSection = (typeof SECTION_TOGGLES)[number];
-
 export default function TailoringEditForm({ slug, master, initialProfile }: TailoringEditFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const [headline, setHeadline] = useState(initialProfile.headline ?? '');
-  const [summary, setSummary] = useState(initialProfile.summary ?? '');
-
-  // Build per-entry experience state from the existing overlay rules.
-  const ruleByIndex = new Map(initialProfile.experience.map((r) => [r.index, r]));
-  const [experience, setExperience] = useState<ExperienceState[]>(() =>
-    master.experience.map((_, i) => {
-      const rule = ruleByIndex.get(i);
-      return {
-        included: rule?.include !== false,
-        hiddenHighlights: new Set(rule?.hiddenHighlights ?? [])
-      };
-    })
-  );
-
-  // Skills: per-group include + optional numeric order rank.
-  const hiddenSkillSet = new Set(initialProfile.skills.hidden);
-  const orderRankByIndex = new Map(initialProfile.skills.order.map((idx, rank) => [idx, rank]));
-  const [skillIncluded, setSkillIncluded] = useState<boolean[]>(() =>
-    master.skills.map((_, i) => !hiddenSkillSet.has(i))
-  );
-  const [skillOrder, setSkillOrder] = useState<string[]>(() =>
-    master.skills.map((_, i) => (orderRankByIndex.has(i) ? String(orderRankByIndex.get(i)) : ''))
-  );
-
-  const [hiddenSections, setHiddenSections] = useState<Set<ToggleSection>>(
-    () => new Set(initialProfile.hiddenSections)
-  );
+  // Expand the stored overlay into positional editor state (pure; see lib/tailoring-form).
+  const [initial] = useState(() => profileToFormState(master, initialProfile));
+  const [headline, setHeadline] = useState(initial.headline);
+  const [summary, setSummary] = useState(initial.summary);
+  const [experience, setExperience] = useState<ExperienceRuleState[]>(initial.experience);
+  const [skillIncluded, setSkillIncluded] = useState<boolean[]>(initial.skillIncluded);
+  const [skillOrder, setSkillOrder] = useState<string[]>(initial.skillOrder);
+  const [hiddenSections, setHiddenSections] = useState<Set<TailoringSection>>(initial.hiddenSections);
 
   const dirty = () => {
     setError(null);
@@ -101,7 +80,7 @@ export default function TailoringEditForm({ slug, master, initialProfile }: Tail
     dirty();
   };
 
-  const toggleSection = (section: ToggleSection) => {
+  const toggleSection = (section: TailoringSection) => {
     setHiddenSections((prev) => {
       const next = new Set(prev);
       if (next.has(section)) {
@@ -114,42 +93,11 @@ export default function TailoringEditForm({ slug, master, initialProfile }: Tail
     dirty();
   };
 
-  const buildProfile = (): TailoringProfile => {
-    // Only store experience rules that differ from "fully included" to keep
-    // overlays small.
-    const experienceRules = experience
-      .map((state, index) => ({ state, index }))
-      .filter(({ state }) => !state.included || state.hiddenHighlights.size > 0)
-      .map(({ state, index }) =>
-        state.included
-          ? { index, hiddenHighlights: [...state.hiddenHighlights].sort((a, b) => a - b) }
-          : { index, include: false }
-      );
-
-    const hidden = skillIncluded
-      .map((included, i) => ({ included, i }))
-      .filter(({ included }) => !included)
-      .map(({ i }) => i);
-
-    // Order: take groups with a numeric order value, sort by that value, and
-    // emit their indices in that sequence. Groups without a value fall to the
-    // end in original order (handled by the resolver).
-    const order = skillOrder
-      .map((value, i) => ({ rank: Number(value), i, set: value.trim() !== '' && !Number.isNaN(Number(value)) }))
-      .filter(({ set }) => set)
-      .sort((a, b) => a.rank - b.rank)
-      .map(({ i }) => i);
-
-    return tailoringProfileSchema.parse({
-      name: initialProfile.name,
-      baseSlug: initialProfile.baseSlug,
-      headline: headline.trim() || undefined,
-      summary: summary.trim() || undefined,
-      experience: experienceRules,
-      skills: { order, hidden },
-      hiddenSections: [...hiddenSections]
-    });
-  };
+  const buildProfile = (): TailoringProfile =>
+    formStateToProfile(
+      { name: initialProfile.name, baseSlug: initialProfile.baseSlug },
+      { headline, summary, experience, skillIncluded, skillOrder, hiddenSections }
+    );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -304,7 +252,7 @@ export default function TailoringEditForm({ slug, master, initialProfile }: Tail
       <section className="admin-section">
         <h2>Sections</h2>
         <p className="admin-user-info">Hide entire sections from this tailored version.</p>
-        {SECTION_TOGGLES.map((section) => (
+        {TAILORING_SECTIONS.map((section) => (
           <label key={section} className="admin-highlight-row">
             <input
               type="checkbox"
