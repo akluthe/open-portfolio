@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 import { auth } from '@clerk/nextjs/server';
 import { resumeSchema, type ResumeDocument } from '@/lib/shared-types';
 import { updateResumeBySlug } from '@/lib/resume-api';
@@ -39,6 +40,9 @@ export async function PUT(
 
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: error.issues }, { status: 400 });
+    }
     if (error instanceof Error) {
       // Validation errors or API errors
       if (error.message.includes('Validation')) {

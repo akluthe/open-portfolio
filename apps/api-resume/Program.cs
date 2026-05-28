@@ -112,6 +112,13 @@ builder.Services.AddScoped<IResumeDbService>(sp =>
     return new ResumeDbService(connString);
 });
 
+// Register ProfileDbService for DI (tailoring overlays)
+builder.Services.AddScoped<IProfileDbService>(sp =>
+{
+    var connString = sp.GetRequiredService<string>();
+    return new ProfileDbService(connString);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -186,6 +193,85 @@ app.MapPut(
                 title: "Internal server error"
             );
         }
+    }
+);
+
+// GET /profiles - list tailoring overlays ({ slug, name, baseSlug }[]). Public.
+app.MapGet(
+    "/profiles",
+    async (IProfileDbService db) =>
+        Results.Content(await db.ListProfilesJsonAsync(), "application/json")
+);
+
+// GET /profiles/{slug} - overlay doc. Public.
+app.MapGet(
+    "/profiles/{slug}",
+    async (string slug, IProfileDbService db) =>
+    {
+        var json = await db.GetProfileJsonBySlugAsync(slug);
+        return json is not null ? Results.Content(json, "application/json") : Results.NotFound();
+    }
+);
+
+// PUT /profiles/{slug} - upsert overlay. Requires authentication.
+// Light structural check only (name + baseSlug); authoritative validation is the
+// Zod tailoringProfileSchema in the web tier before this is called.
+app.MapPut(
+    "/profiles/{slug}",
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, HttpRequest request, IProfileDbService db) =>
+    {
+        try
+        {
+            using var reader = new StreamReader(request.Body);
+            var json = await reader.ReadToEndAsync();
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return Results.BadRequest(new { error = "Request body is required" });
+            }
+
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (
+                !root.TryGetProperty("name", out var name)
+                || name.GetString() is null or { Length: 0 }
+                || !root.TryGetProperty("baseSlug", out var baseSlug)
+                || baseSlug.GetString() is null or { Length: 0 }
+            )
+            {
+                return Results.BadRequest(
+                    new { error = "Tailoring profile must have name and baseSlug" }
+                );
+            }
+
+            await db.UpsertProfileAsync(slug, json);
+
+            return Results.Content(json, "application/json");
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return Results.BadRequest(new { error = "Invalid JSON format" });
+        }
+        catch (Exception)
+        {
+            // Avoid leaking internal details (e.g. Npgsql connection errors) to clients.
+            return Results.Problem(
+                detail: "An unexpected error occurred",
+                statusCode: 500,
+                title: "Internal server error"
+            );
+        }
+    }
+);
+
+// DELETE /profiles/{slug} - remove overlay. Requires authentication.
+app.MapDelete(
+    "/profiles/{slug}",
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, IProfileDbService db) =>
+    {
+        await db.DeleteProfileAsync(slug);
+        return Results.NoContent();
     }
 );
 

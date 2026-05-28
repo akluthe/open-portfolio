@@ -15,6 +15,8 @@ docker compose -f infra/compose/docker-compose.yml up -d
 - S1E03 Minimal API read
 - S1E04 Web SSR + print CSS
 - S1E05 Local admin editing (dev-only)
+- S1E06 Typst + PDF download routes
+- S1E07 Resume tailoring (master + overlay)
 - Stretch: PDF, OTEL, CI/CD, Helm
 
 ## Backlog

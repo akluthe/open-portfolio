@@ -32,6 +32,13 @@ public sealed class PostgresResumeFixture : IAsyncLifetime
                 created_tsp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 last_mod_tsp TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
+            CREATE TABLE IF NOT EXISTS profiles (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                slug TEXT UNIQUE NOT NULL,
+                doc JSONB NOT NULL,
+                created_tsp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                last_mod_tsp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
         ";
 
         await EnsureSchemaAsync(schemaSql);
@@ -46,7 +53,7 @@ public sealed class PostgresResumeFixture : IAsyncLifetime
     {
         await using var conn = new NpgsqlConnection(ConnectionString);
         await conn.OpenAsync();
-        await using var cmd = new NpgsqlCommand("TRUNCATE TABLE resumes;", conn);
+        await using var cmd = new NpgsqlCommand("TRUNCATE TABLE resumes, profiles;", conn);
         await cmd.ExecuteNonQueryAsync();
     }
 
