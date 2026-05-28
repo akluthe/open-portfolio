@@ -50,6 +50,9 @@ export default async function AdminPage({ params }: AdminPageProps) {
           <p className="admin-user-info">Logged in as: {user.username || user.firstName || user.emailAddresses[0]?.emailAddress}</p>
         </div>
         <div className="admin-header-actions">
+          <a href="/admin/tailoring" className="admin-link">
+            Tailorings →
+          </a>
           <a href={`/r/${slug}`} className="admin-link">
             View Public Resume →
           </a>

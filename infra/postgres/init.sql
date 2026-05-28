@@ -24,3 +24,29 @@ VALUES (
   }'::jsonb
 )
 ON CONFLICT (slug) DO NOTHING;
+
+-- Tailoring profiles: small JSON overlays on a master resume (referenced by
+-- baseSlug). They never copy resume content; resolution happens in the web tier.
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  slug TEXT UNIQUE NOT NULL,
+  doc JSONB NOT NULL,
+  created_tsp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_mod_tsp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Example seed (safe to keep; demonstrates the overlay shape)
+INSERT INTO profiles(slug, doc)
+VALUES (
+  'databank-engmgr',
+  '{
+     "name": "Databank — Senior Engineering Manager",
+     "baseSlug": "main",
+     "headline": "Senior Engineering Manager — Frontend Org & Platform Modernization",
+     "summary": "Engineering leader who rebuilt and led the frontend org at Anheuser-Busch InBev (NAZ)…",
+     "experience": [],
+     "skills": { "order": [], "hidden": [] },
+     "hiddenSections": []
+   }'::jsonb
+)
+ON CONFLICT (slug) DO NOTHING;
