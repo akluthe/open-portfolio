@@ -24,3 +24,6 @@ obj/
 
 # OMC (oh-my-claudecode) local state
 .omc/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
