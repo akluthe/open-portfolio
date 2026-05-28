@@ -21,3 +21,6 @@ obj/
 # Misc
 .env
 .env.*
+
+# OMC (oh-my-claudecode) local state
+.omc/
