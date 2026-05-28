@@ -12,7 +12,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     }
 
     const typstSource = await buildTypstSource(resume);
-    const filename = `${slug}.typ`;
+    const filename = `${slug.replace(/[^a-zA-Z0-9_-]/g, '_')}.typ`;
 
     return new NextResponse(typstSource, {
       status: 200,

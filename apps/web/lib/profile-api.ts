@@ -110,18 +110,20 @@ export async function deleteProfile(slug: string, token: string): Promise<void> 
  * Convenience: fetch a tailoring profile, fetch its base master resume, and
  * return the resolved ResumeDocument. Returns null if either is missing.
  */
-export async function fetchResolvedResume(slug: string): Promise<ResumeDocument | null> {
-  const profile = await fetchProfile(slug);
+export const fetchResolvedResume = cache(
+  async (slug: string): Promise<ResumeDocument | null> => {
+    const profile = await fetchProfile(slug);
 
-  if (!profile) {
-    return null;
+    if (!profile) {
+      return null;
+    }
+
+    const master = await fetchResumeBySlug(profile.baseSlug);
+
+    if (!master) {
+      return null;
+    }
+
+    return resolveTailoredResume(master, profile);
   }
-
-  const master = await fetchResumeBySlug(profile.baseSlug);
-
-  if (!master) {
-    return null;
-  }
-
-  return resolveTailoredResume(master, profile);
-}
+);

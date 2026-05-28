@@ -253,10 +253,11 @@ app.MapPut(
         {
             return Results.BadRequest(new { error = "Invalid JSON format" });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
+            // Avoid leaking internal details (e.g. Npgsql connection errors) to clients.
             return Results.Problem(
-                detail: ex.Message,
+                detail: "An unexpected error occurred",
                 statusCode: 500,
                 title: "Internal server error"
             );

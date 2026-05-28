@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     const typstSource = await buildTypstSource(resume);
     const pdfBytes = await renderTypstPdf(typstSource);
-    const filename = `${slug}.pdf`;
+    const filename = `${slug.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
 
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
