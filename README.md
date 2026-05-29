@@ -20,9 +20,12 @@ docker compose -f infra/compose/docker-compose.yml up -d
 - Stretch: PDF, OTEL, CI/CD, Helm
 
 ## Local development & verification
+> Full runbook (Rancher Desktop, Testcontainers, local auth, smoke checks): [`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md).
+
 ```bash
 make up     # Postgres (creates schema + seeds on a FRESH volume via init.sql)
 make dev    # Postgres + API (:5152) + web (:3000)
+make seed   # load the local (gitignored) master resume into slug 'main'
 ```
 
 **Migration caveat:** `infra/postgres/init.sql` runs only on a *fresh* Postgres
