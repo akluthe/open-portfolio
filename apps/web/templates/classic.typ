@@ -10,7 +10,7 @@
     background: place(top, rect(width: 100%, height: 4pt, fill: leaf)),
   )
   set text(font: sans, size: 9.7pt, fill: n800)
-  set par(leading: 0.6em, spacing: 0.82em)
+  set par(leading: 0.72em, spacing: 0.9em)
 
   // ---- Header (centered) ----
   align(center)[
