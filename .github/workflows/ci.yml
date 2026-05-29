@@ -19,7 +19,14 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: apps/web/package-lock.json
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            packages/shared-types/package-lock.json
+      # shared-types is a file: dependency that imports zod; it needs its own
+      # node_modules so tsc/Turbopack can resolve zod from the package's realpath.
+      - name: Install shared-types deps
+        run: npm ci
+        working-directory: packages/shared-types
       - run: npm ci
       - name: Typecheck
         run: npm run typecheck
