@@ -1,0 +1,96 @@
+# Resume Platform — self-hosted production stack.
+# Caddy (auto-HTTPS) -> Next.js web -> .NET API -> Postgres.
+# Only Caddy is published to the host; web/api/postgres stay on the internal network.
+#
+#   cp .env.template .env   # then fill it in
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Build contexts are relative to this file (infra/compose/), so the web image
+# builds from the repo root (../..) and the API from apps/api-resume.
+
+networks:
+  resume-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-resume}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Schema + seed run ONLY on a fresh volume (docker-entrypoint-initdb.d).
+      - ../postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - resume-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB:-resume}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ../../apps/api-resume
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=${POSTGRES_DB:-resume}"
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?CLERK_PUBLISHABLE_KEY required}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?CLERK_SECRET_KEY required}
+      CLERK_INSTANCE_ID: ${CLERK_INSTANCE_ID:?CLERK_INSTANCE_ID required}
+    networks:
+      - resume-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Baked into the client bundle at build time (see apps/web/Dockerfile).
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?CLERK_PUBLISHABLE_KEY required}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      RESUME_API: http://api:8080
+      FEATURE_ADMIN_EDITING: ${FEATURE_ADMIN_EDITING:-true}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+      ALLOWED_ADMIN_GITHUB_USERNAMES: ${ALLOWED_ADMIN_GITHUB_USERNAMES:-}
+    networks:
+      - resume-net
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN required}
+      EMAIL: ${SSL_EMAIL:?SSL_EMAIL required}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - resume-net
+    depends_on:
+      - web

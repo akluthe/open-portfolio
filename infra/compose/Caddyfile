@@ -1,0 +1,18 @@
+# Resume Platform — Caddy reverse proxy with automatic HTTPS (Let's Encrypt).
+# {$DOMAIN} and {$EMAIL} are supplied by docker-compose.prod.yml from .env.
+
+{
+	email {$EMAIL}
+	# For testing certs without hitting Let's Encrypt rate limits, uncomment:
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+{$DOMAIN} {
+	reverse_proxy web:3000
+
+	encode gzip zstd
+
+	log {
+		output file /data/logs/access.log
+	}
+}
