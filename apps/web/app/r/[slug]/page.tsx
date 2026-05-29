@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ResumeView from '@/components/resume/resume-view';
+import DownloadControls from '@/components/resume/download-controls';
 import { fetchResumeBySlug } from '@/lib/resume-api';
 import { isAdmin } from '@/lib/admin-auth';
 
@@ -28,12 +29,7 @@ export default async function ResumePage({ params }: ResumePageProps) {
             Edit Resume
           </a>
         )}
-        <a className="resume-action" href={`/api/resumes/${slug}/typst`} download>
-          Download Typst
-        </a>
-        <a className="resume-action" href={`/api/resumes/${slug}/pdf`} download>
-          Download PDF
-        </a>
+        <DownloadControls basePath={`/api/resumes/${slug}`} />
       </div>
       <ResumeView resume={resume} />
     </>

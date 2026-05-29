@@ -47,6 +47,30 @@ main {
   color: #fff;
 }
 
+.resume-style {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
+.resume-style-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.resume-style-select {
+  border: 1px solid #111;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111;
+  background-color: #fff;
+  cursor: pointer;
+}
+
 .resume-shell {
   margin: 0 auto;
   background: #fff;
