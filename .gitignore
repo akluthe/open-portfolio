@@ -1,4 +1,3 @@
-\
 # macOS
 .DS_Store
 
@@ -18,12 +17,17 @@ obj/
 # Docker
 **/.env.local
 
-# Misc
+# Misc — secrets, but keep committed templates
 .env
 .env.*
+!.env.template
+!**/.env.template
 
 # OMC (oh-my-claudecode) local state
 .omc/
+
+# Claude Code local agent config
+.claude/
 
 # TypeScript incremental build cache
 *.tsbuildinfo

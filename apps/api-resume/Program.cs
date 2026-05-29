@@ -131,6 +131,9 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+// GET /health - unauthenticated liveness probe for container orchestration.
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
 // GET /resumes/{slug} using service
 app.MapGet(
     "/resumes/{slug}",

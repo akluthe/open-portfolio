@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  web:
+    name: Web (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            packages/shared-types/package-lock.json
+      # shared-types is a file: dependency that imports zod; it needs its own
+      # node_modules so tsc/Turbopack can resolve zod from the package's realpath.
+      - name: Install shared-types deps
+        run: npm ci
+        working-directory: packages/shared-types
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test
+        run: npm run test
+      - name: Build
+        run: npm run build
+        env:
+          # Clerk validates the publishable key format while prerendering (no network
+          # call). A structurally valid dummy (base64 of "clerk.example.com$") compiles.
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZXhhbXBsZS5jb20k
+
+  api:
+    name: API (.NET)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Restore
+        run: dotnet restore apps/api-resume/api-resume.csproj
+      - name: Build
+        run: dotnet build apps/api-resume/api-resume.csproj -c Release --no-restore
+      - name: Test
+        # Integration tests use Testcontainers; the GitHub runner provides Docker.
+        run: dotnet test apps/api-resume.tests/api-resume.tests.csproj -c Release

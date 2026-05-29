@@ -1,52 +1,67 @@
-\
-# Resume Platform (Public Build)
+# Resume Platform
 
-A lean, over-engineered (on purpose) resume + portfolio to demonstrate staff-level engineering.
+A small, deliberately well-engineered resume + portfolio CMS — built as a public,
+governed example of how I structure a polyglot full-stack project.
 
-## Quickstart
-```bash
-# Postgres only for S1E01–S1E02
-docker compose -f infra/compose/docker-compose.yml up -d
+One canonical résumé (the **master**), with named **tailorings** — per-application
+overlays that show/hide entries, bullets, skills, and sections without forking the
+content. Every view (HTML, Typst source, PDF) renders from the same resolver, so a
+tailored cut never drifts from the master.
+
+## Architecture
+
+```
+Caddy ──▶ Next.js web (apps/web) ──▶ .NET 9 API (apps/api-resume) ──▶ Postgres
+          React 18 · SSR · Clerk      minimal API · JWT (Clerk JWKS)   JSONB docs
+          Typst → PDF export          dumb JSON store
 ```
 
-## Roadmap (Seasons/Episodes)
-- S1E01 Monorepo + scaffold
-- S1E02 Data model: JSONB + Zod
-- S1E03 Minimal API read
-- S1E04 Web SSR + print CSS
-- S1E05 Local admin editing (dev-only)
-- S1E06 Typst + PDF download routes
-- S1E07 Resume tailoring (master + overlay)
-- Stretch: PDF, OTEL, CI/CD, Helm
+- **`apps/web`** — Next.js (App Router). Public views `/r/[slug]` (master) and
+  `/t/[slug]` (tailored); dev/admin editing under `/admin/**`; PDF + Typst export
+  routes. The overlay resolver and Typst pipeline live here.
+- **`apps/api-resume`** — .NET 9 minimal API. Stores resume + tailoring JSON in
+  Postgres; validates Clerk JWTs on write endpoints.
+- **`packages/shared-types`** — Zod schemas (`ResumeDocument`, tailoring profiles)
+  shared as the single source of truth for shape and validation.
+- **`infra/`** — Postgres `init.sql`, local + production Compose stacks, Caddy.
+- **`docs/`** — runbooks and ADRs ([docs/README.md](docs/README.md)).
 
-## Local development & verification
-> Full runbook (Rancher Desktop, Testcontainers, local auth, smoke checks): [`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md).
+## Quickstart (local)
 
 ```bash
-make up     # Postgres (creates schema + seeds on a FRESH volume via init.sql)
-make dev    # Postgres + API (:5152) + web (:3000)
-make seed   # load the local (gitignored) master resume into slug 'main'
+make up      # Postgres (creates schema + seeds on a FRESH volume via init.sql)
+make dev     # Postgres + API (:5152) + web (:3000)
+make seed    # load the local (gitignored) master resume into slug 'main'
 ```
 
-**Migration caveat:** `infra/postgres/init.sql` runs only on a *fresh* Postgres
-volume (it's mounted into `/docker-entrypoint-initdb.d/`). After changing the
-schema (e.g. the `profiles` table), an existing volume will **not** pick it up.
-Either recreate the volume with `make down && make up` (drops data via `-v`) or
-apply the change manually with `make db`.
+Full runbook — Rancher Desktop, Testcontainers, auth: **[docs/LOCAL_DEV.md](docs/LOCAL_DEV.md)**.
+Auth setup (Clerk + GitHub OAuth): **[docs/AUTH.md](docs/AUTH.md)**.
 
-**Tests:**
+> `infra/postgres/init.sql` runs **only on a fresh Postgres volume**. After a
+> schema change, recreate the volume (`make down && make up`, which drops data)
+> or apply the change manually with `make db`.
+
+## Tests
+
 ```bash
-npm run test --prefix apps/web          # vitest (resolver, typst, view, api)
-npm run typecheck --prefix apps/web     # tsc --noEmit
-make test                               # web + .NET (.NET uses Testcontainers)
-```
-The .NET integration tests need a Docker daemon. With **Rancher Desktop** (no
-Docker Desktop), export these first so Testcontainers can reach the engine and
-skip the Ryuk reaper (which can't bind the Rancher socket):
-```bash
-export DOCKER_HOST="unix://$HOME/.rd/docker.sock"
-export TESTCONTAINERS_RYUK_DISABLED=true
+npm run test --prefix apps/web        # vitest (resolver, typst, view, api)
+npm run typecheck --prefix apps/web   # tsc --noEmit
+make test                             # web + .NET (Testcontainers; needs a Docker daemon)
 ```
 
-## Backlog
-See `ado/*.csv` for Azure DevOps import.
+## Deploy
+
+Self-hosted, one Docker Compose stack behind Caddy (auto-HTTPS):
+**[docs/DEPLOY.md](docs/DEPLOY.md)**.
+
+```bash
+cd infra/compose && cp .env.template .env   # fill in domain + Clerk keys
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+## Governance
+
+- **ADRs** — architecture decisions in [`docs/adr/`](docs/adr).
+- **CI** — `.github/workflows/ci.yml` builds and tests web + API on every PR.
+- **Contributing** — [CONTRIBUTING.md](CONTRIBUTING.md).
+- **License** — [MIT](LICENSE).

@@ -1,0 +1,19 @@
+# Root build context for the web image (apps/web/Dockerfile). Keep it lean.
+**/node_modules
+**/.next
+**/.out
+**/coverage
+**/bin
+**/obj
+**/.vite
+.git
+.github
+.venv
+.omc
+.claude
+.vscode
+docs
+infra/seed
+*.log
+**/*.tsbuildinfo
+Resume Typst Design.zip
