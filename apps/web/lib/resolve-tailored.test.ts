@@ -122,6 +122,83 @@ describe('resolveTailoredResume', () => {
     expect(result.experience).toHaveLength(3);
   });
 
+  it('filters nested sub-roles and their highlights by sub-role rules', () => {
+    const nestedMaster: ResumeDocument = resumeSchema.parse({
+      basics: { name: 'Jane Example', title: 'Staff Engineer' },
+      experience: [
+        {
+          company: 'Anheuser-Busch InBev',
+          role: 'Engineering Manager & Technical Lead',
+          period: 'Jul 2022 – Present',
+          highlights: [],
+          roles: [
+            { role: 'Zone Lead', period: '2026', highlights: ['Z-0', 'Z-1', 'Z-2'] },
+            { role: 'Sub-Guild Lead', period: '2024', highlights: ['S-0', 'S-1'] },
+            { role: 'Tech Lead', period: '2023', highlights: ['T-0', 'T-1'] }
+          ]
+        },
+        {
+          company: 'Globex',
+          role: 'Senior Engineer',
+          period: '2019 - 2022',
+          highlights: ['Shipped billing.']
+        }
+      ]
+    });
+
+    const result = resolveTailoredResume(
+      nestedMaster,
+      profile({
+        experience: [
+          {
+            index: 0,
+            include: true,
+            roles: [
+              { index: 0, hiddenHighlights: [1] },
+              { index: 1, include: false },
+              { index: 2, hiddenHighlights: [0] }
+            ]
+          }
+        ]
+      })
+    );
+
+    const ab = result.experience[0];
+    expect(ab.company).toBe('Anheuser-Busch InBev');
+    // entry-level highlights stay empty for nested entries
+    expect(ab.highlights).toEqual([]);
+    // sub-role 1 (Sub-Guild) dropped via include:false
+    expect(ab.roles?.map((r) => r.role)).toEqual(['Zone Lead', 'Tech Lead']);
+    // sub-role 0 hides highlight index 1
+    expect(ab.roles?.[0].highlights).toEqual(['Z-0', 'Z-2']);
+    // sub-role 2 hides highlight index 0
+    expect(ab.roles?.[1].highlights).toEqual(['T-1']);
+    // flat entry unaffected
+    expect(result.experience[1].highlights).toEqual(['Shipped billing.']);
+  });
+
+  it('keeps all sub-roles and highlights when a nested entry has no sub-role rules', () => {
+    const nestedMaster: ResumeDocument = resumeSchema.parse({
+      basics: { name: 'Jane Example', title: 'Staff Engineer' },
+      experience: [
+        {
+          company: 'Anheuser-Busch InBev',
+          role: 'Engineering Manager',
+          highlights: [],
+          roles: [
+            { role: 'Zone Lead', highlights: ['Z-0', 'Z-1'] },
+            { role: 'Tech Lead', highlights: ['T-0'] }
+          ]
+        }
+      ]
+    });
+
+    const result = resolveTailoredResume(nestedMaster, profile({}));
+    expect(result.experience[0].roles?.map((r) => r.role)).toEqual(['Zone Lead', 'Tech Lead']);
+    expect(result.experience[0].roles?.[0].highlights).toEqual(['Z-0', 'Z-1']);
+    expect(result.experience[0].roles?.[1].highlights).toEqual(['T-0']);
+  });
+
   it('always returns a schema-valid ResumeDocument', () => {
     const result = resolveTailoredResume(
       master,

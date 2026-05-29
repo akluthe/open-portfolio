@@ -1,10 +1,19 @@
 import { z } from 'zod';
 import { resumeSchema, type ResumeDocument } from './resume';
 
-const experienceRuleSchema = z.object({
+const subRoleRuleSchema = z.object({
   index: z.number().int().nonnegative(),
   include: z.boolean().default(true),
   hiddenHighlights: z.array(z.number().int().nonnegative()).default([])
+});
+
+const experienceRuleSchema = z.object({
+  index: z.number().int().nonnegative(),
+  include: z.boolean().default(true),
+  hiddenHighlights: z.array(z.number().int().nonnegative()).default([]),
+  // Sub-role rules apply only to nested (multi-role) entries, addressed by
+  // sub-role index. Flat entries ignore this field.
+  roles: z.array(subRoleRuleSchema).default([])
 });
 
 export const tailoringProfileSchema = z.object({
@@ -43,6 +52,24 @@ export function resolveTailoredResume(
     .map((entry, i) => ({ entry, rule: ruleByIndex.get(i) }))
     .filter(({ rule }) => rule?.include !== false)
     .map(({ entry, rule }) => {
+      // Nested (multi-role) entry: filter sub-roles and their highlights.
+      if (entry.roles && entry.roles.length > 0) {
+        const subRuleByIndex = new Map((rule?.roles ?? []).map((r) => [r.index, r]));
+        const roles = entry.roles
+          .map((subRole, si) => ({ subRole, subRule: subRuleByIndex.get(si) }))
+          .filter(({ subRule }) => subRule?.include !== false)
+          .map(({ subRole, subRule }) => {
+            if (!subRule || subRule.hiddenHighlights.length === 0) return subRole;
+            const hidden = new Set(subRule.hiddenHighlights);
+            return {
+              ...subRole,
+              highlights: subRole.highlights.filter((_, hi) => !hidden.has(hi))
+            };
+          });
+        return { ...entry, roles };
+      }
+
+      // Flat entry: legacy entry-level highlight filtering.
       if (!rule || rule.hiddenHighlights.length === 0) return entry;
       const hidden = new Set(rule.hiddenHighlights);
       return { ...entry, highlights: entry.highlights.filter((_, hi) => !hidden.has(hi)) };

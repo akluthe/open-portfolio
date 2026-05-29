@@ -109,6 +109,39 @@ describe('ResumeView', () => {
     expect(screen.getByText('Jan 2020 – Dec 2021')).toBeInTheDocument();
   });
 
+  it('renders a nested entry with the company once and a header per sub-role', () => {
+    const resume = buildResume({
+      experience: [
+        {
+          company: 'Anheuser-Busch InBev',
+          role: 'Engineering Manager & Technical Lead',
+          period: 'Jul 2022 – Present',
+          location: 'St. Louis, MO',
+          highlights: [],
+          roles: [
+            { role: 'Zone Integrations Lead', period: 'Feb 2026 – Present', highlights: ['Led integration delivery.'] },
+            { role: 'Tech Lead', period: 'Mar 2023 – Mar 2024', highlights: ['Owned API architecture.'] }
+          ]
+        }
+      ]
+    });
+
+    render(<ResumeView resume={resume} />);
+
+    // Company is the prominent (h3) heading, shown once.
+    const companyHeadings = screen.getAllByRole('heading', { level: 3, name: 'Anheuser-Busch InBev' });
+    expect(companyHeadings).toHaveLength(1);
+
+    // Each sub-role gets its own header.
+    expect(screen.getByRole('heading', { level: 4, name: 'Zone Integrations Lead' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 4, name: 'Tech Lead' })).toBeInTheDocument();
+
+    // Sub-role periods and highlights render.
+    expect(screen.getByText('Feb 2026 – Present')).toBeInTheDocument();
+    expect(screen.getByText('Led integration delivery.')).toBeInTheDocument();
+    expect(screen.getByText('Owned API architecture.')).toBeInTheDocument();
+  });
+
   it('omits optional resume sections when there is no data', () => {
     const resume = buildResume({
       skills: [],
