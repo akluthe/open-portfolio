@@ -71,6 +71,22 @@ main {
   cursor: pointer;
 }
 
+.project-link {
+  margin: 0.1rem 0 0;
+  font-size: 0.85rem;
+}
+
+.project-link a {
+  color: #5c8a2e;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.project-link a:hover,
+.project-link a:focus-visible {
+  text-decoration: underline;
+}
+
 .resume-shell {
   margin: 0 auto;
   background: #fff;
