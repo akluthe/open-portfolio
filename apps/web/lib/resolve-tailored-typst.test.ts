@@ -5,7 +5,7 @@ import {
   resolveTailoredResume,
   type ResumeDocument
 } from '@/lib/shared-types';
-import { buildTypstSource } from './resume-typst';
+import { buildResumeData } from './resume-typst';
 
 const master: ResumeDocument = resumeSchema.parse({
   basics: { name: 'Jane Example', title: 'Staff Engineer', summary: 'Original summary.' },
@@ -18,8 +18,8 @@ const master: ResumeDocument = resumeSchema.parse({
   education: []
 });
 
-describe('buildTypstSource over a tailored resume', () => {
-  it('reflects the headline override and excluded company', async () => {
+describe('buildResumeData over a tailored resume', () => {
+  it('reflects the headline override and excluded company', () => {
     const profile = tailoringProfileSchema.parse({
       name: 'Test',
       baseSlug: 'main',
@@ -27,10 +27,11 @@ describe('buildTypstSource over a tailored resume', () => {
       experience: [{ index: 1, include: false }]
     });
 
-    const typst = await buildTypstSource(resolveTailoredResume(master, profile));
+    const data = buildResumeData(resolveTailoredResume(master, profile));
+    const companies = data.experience.map((e) => e.company);
 
-    expect(typst).toContain('Engineering Manager');
-    expect(typst).toContain('Acme Corp');
-    expect(typst).not.toContain('Globex');
+    expect(data.basics.title).toBe('Engineering Manager');
+    expect(companies).toContain('Acme Corp');
+    expect(companies).not.toContain('Globex');
   });
 });

@@ -1,10 +1,10 @@
 import { Buffer } from 'node:buffer';
 import { NextResponse, type NextRequest } from 'next/server';
 import { fetchResolvedResume } from '@/lib/profile-api';
-import { buildTypstSource } from '@/lib/resume-typst';
+import { normalizeTypstStyle } from '@/lib/resume-typst';
 import { renderTypstPdf } from '@/lib/typst-pdf';
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await params;
     const resume = await fetchResolvedResume(slug);
@@ -13,8 +13,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ message: 'Tailored resume not found' }, { status: 404 });
     }
 
-    const typstSource = await buildTypstSource(resume);
-    const pdfBytes = await renderTypstPdf(typstSource);
+    const style = normalizeTypstStyle(request.nextUrl.searchParams.get('style'));
+    const pdfBytes = await renderTypstPdf(resume, style);
     const filename = `${slug.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
 
     return new NextResponse(Buffer.from(pdfBytes), {

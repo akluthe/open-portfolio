@@ -1,8 +1,26 @@
-// Resume base template. Runtime inserts rendered sections at the marker below.
-// Conforms to standard US letter dimensions so exported PDFs print cleanly.
-#set page(width: 8.5in, height: 11in, margin: 0.8in)
-#set text(font: "New Computer Modern", size: 11pt)
-#set par(justify: true, leading: 1.3em)
-#set heading(numbering: none)
+// ============================================================
+//  resume.typ — entry point. The web app selects the layout via
+//  `sys.inputs.style` (passed through the WASM compiler's `inputs`
+//  option) and supplies the data through `resume.json` in the
+//  virtual filesystem.
+//
+//  Styles: "classic" | "twocol" | "sidebar"
+// ============================================================
+#import "data.typ": resume-data
+#import "classic.typ": classic
+#import "twocol.typ": twocol
+#import "sidebar.typ": sidebar
 
-{{CONTENT}}
+#let style = sys.inputs.at("style", default: "classic")
+
+#let layouts = (
+  classic: classic,
+  twocol: twocol,
+  sidebar: sidebar,
+)
+
+#if not layouts.keys().contains(style) {
+  panic("Unknown style '" + style + "'. Use one of: classic, twocol, sidebar.")
+}
+
+#(layouts.at(style))(resume-data)

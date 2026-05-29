@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { fetchResumeBySlug } from '@/lib/resume-api';
-import { buildTypstSource } from '@/lib/resume-typst';
+import { normalizeTypstStyle } from '@/lib/resume-typst';
+import { buildTypstSource } from '@/lib/typst-pdf';
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await params;
     const resume = await fetchResumeBySlug(slug);
@@ -11,7 +12,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ message: 'Resume not found' }, { status: 404 });
     }
 
-    const typstSource = await buildTypstSource(resume);
+    const style = normalizeTypstStyle(request.nextUrl.searchParams.get('style'));
+    const typstSource = await buildTypstSource(resume, style);
     const filename = `${slug}.typ`;
 
     return new NextResponse(typstSource, {
