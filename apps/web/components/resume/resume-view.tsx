@@ -48,29 +48,76 @@ export default function ResumeView({ resume }: ResumeViewProps) {
       {resume.experience.length > 0 && (
         <section className="section">
           <h2>EXPERIENCE</h2>
-          {resume.experience.map((entry) => (
-            <div className="experience-item" key={`${entry.company}-${entry.role}`}>
-              <h3>{entry.role}</h3>
-              <div className="experience-meta">
-                <span>{entry.company}</span>
-                {entry.location && <span>{entry.location}</span>}
-                {entry.period && <span>{entry.period}</span>}
-                {!entry.period && (entry.startDate || entry.endDate) && (
-                  <span>
-                    {entry.startDate ?? 'Present'}
-                    {entry.endDate ? ` – ${entry.endDate}` : ''}
-                  </span>
+          {resume.experience.map((entry, entryIndex: number) =>
+            entry.roles?.length ? (
+              <div
+                className="experience-item"
+                key={`${entry.company}-${entryIndex}`}
+              >
+                <h3>{entry.company}</h3>
+                <div className="experience-meta">
+                  {entry.location && <span>{entry.location}</span>}
+                  {entry.period && <span>{entry.period}</span>}
+                  {!entry.period && (entry.startDate || entry.endDate) && (
+                    <span>
+                      {entry.startDate ?? 'Present'}
+                      {entry.endDate ? ` – ${entry.endDate}` : ''}
+                    </span>
+                  )}
+                </div>
+                {entry.roles.map((subRole, subRoleIndex: number) => (
+                  <div
+                    className="experience-subrole"
+                    key={`${entry.company}-${entryIndex}-${subRoleIndex}`}
+                  >
+                    <h4>{subRole.role}</h4>
+                    <div className="experience-meta">
+                      {subRole.period && <span>{subRole.period}</span>}
+                      {!subRole.period && (subRole.startDate || subRole.endDate) && (
+                        <span>
+                          {subRole.startDate ?? 'Present'}
+                          {subRole.endDate ? ` – ${subRole.endDate}` : ''}
+                        </span>
+                      )}
+                    </div>
+                    {subRole.highlights.length > 0 && (
+                      <ul className="experience-highlights">
+                        {subRole.highlights.map((highlight, highlightIndex: number) => (
+                          <li
+                            key={`${entry.company}-${entryIndex}-${subRoleIndex}-${highlightIndex}`}
+                          >
+                            {highlight}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="experience-item" key={`${entry.company}-${entryIndex}`}>
+                <h3>{entry.role}</h3>
+                <div className="experience-meta">
+                  <span>{entry.company}</span>
+                  {entry.location && <span>{entry.location}</span>}
+                  {entry.period && <span>{entry.period}</span>}
+                  {!entry.period && (entry.startDate || entry.endDate) && (
+                    <span>
+                      {entry.startDate ?? 'Present'}
+                      {entry.endDate ? ` – ${entry.endDate}` : ''}
+                    </span>
+                  )}
+                </div>
+                {entry.highlights.length > 0 && (
+                  <ul className="experience-highlights">
+                    {entry.highlights.map((highlight, highlightIndex: number) => (
+                      <li key={`${entry.company}-${highlightIndex}`}>{highlight}</li>
+                    ))}
+                  </ul>
                 )}
               </div>
-              {entry.highlights.length > 0 && (
-                <ul className="experience-highlights">
-                  {entry.highlights.map((highlight, highlightIndex: number) => (
-                    <li key={`${entry.company}-${highlightIndex}`}>{highlight}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+            )
+          )}
         </section>
       )}
 

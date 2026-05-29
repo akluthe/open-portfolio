@@ -19,6 +19,14 @@ const contactSchema = z
 
 const highlightSchema = z.string().min(1);
 
+const subRoleSchema = z.object({
+  role: z.string().min(1),
+  period: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  highlights: z.array(highlightSchema).default([])
+});
+
 const experienceEntrySchema = z.object({
   company: z.string().min(1),
   role: z.string().min(1),
@@ -26,7 +34,12 @@ const experienceEntrySchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   location: z.string().optional(),
-  highlights: z.array(highlightSchema).default([])
+  highlights: z.array(highlightSchema).default([]),
+  // When present and non-empty, the entry represents one company with multiple
+  // nested roles: the entry-level `role` is a company-level arc label and
+  // entry-level `highlights` should be empty. When absent, behavior is the
+  // legacy single-role + flat-highlights form.
+  roles: z.array(subRoleSchema).optional()
 });
 
 const educationEntrySchema = z.object({
@@ -66,4 +79,5 @@ export const resumeSchema = z.object({
 
 export type ResumeDocument = z.infer<typeof resumeSchema>;
 export type ResumeExperience = z.infer<typeof experienceEntrySchema>;
+export type ResumeSubRole = z.infer<typeof subRoleSchema>;
 export type ResumeSkillGroup = z.infer<typeof skillGroupSchema>;
