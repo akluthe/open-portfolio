@@ -51,7 +51,7 @@ services:
     networks:
       - resume-net
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -71,8 +71,10 @@ services:
       RESUME_API: http://api:8080
       FEATURE_ADMIN_EDITING: ${FEATURE_ADMIN_EDITING:-true}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
       ALLOWED_ADMIN_GITHUB_USERNAMES: ${ALLOWED_ADMIN_GITHUB_USERNAMES:-}
+      # NOTE: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is baked into the client bundle at
+      # BUILD time (see the build.args above) — it is intentionally not a runtime
+      # env var here, since setting it at runtime would have no effect.
     networks:
       - resume-net
 

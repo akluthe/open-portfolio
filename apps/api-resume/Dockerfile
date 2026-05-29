@@ -11,6 +11,10 @@ RUN dotnet publish api-resume.csproj -c Release -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runner
 WORKDIR /app
+# curl for the container healthcheck — the aspnet image ships neither curl nor wget.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 # aspnet image listens on 8080 by default (non-root friendly).
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
