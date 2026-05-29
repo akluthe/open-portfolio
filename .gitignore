@@ -27,3 +27,6 @@ obj/
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Local-only seed data (contains real PII; never commit to a public repo)
+infra/seed/
