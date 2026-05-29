@@ -81,35 +81,57 @@
   if en != "" { start + " — " + en } else { start }
 }
 
-#let exp-entry(e, gap: 11pt) = block(below: gap, breakable: false, width: 100%)[
-  #let roles = e.at("roles", default: ())
-  #if roles.len() > 0 {
-    // Nested (multi-role) entry: company is the heading, each role a sub-block.
-    entry-head(e.company, resolve-period(e))
-    let loc = e.at("location", default: "")
-    if loc != "" {
-      v(1.5pt)
-      text(size: 9pt, fill: n600)[#text(fill: slate, weight: 600)[#loc]]
-    }
-    for r in roles {
-      block(above: 7pt, below: 0pt, width: 100%)[
-        #entry-head(r.role, resolve-period(r), size: 9.6pt, fill: slate-deep)
-        #let rh = r.at("highlights", default: ())
-        #if rh.len() > 0 [ #v(3pt) #bullets(rh) ]
-      ]
-    }
-  } else {
-    // Flat entry: legacy single-role rendering.
-    entry-head(e.role, resolve-period(e))
-    v(1.5pt)
-    text(size: 9pt, fill: n600)[#joined((
-      text(fill: slate, weight: 600)[#e.company],
-      if e.at("location", default: "") != "" { e.location } else { none },
-    ))]
-    let h = e.at("highlights", default: ())
-    if h.len() > 0 [ #v(4pt) #bullets(h) ]
-  }
+// Render one sub-role: its title + period and bullets, kept together so a
+// single role never splits across a page break.
+#let sub-role-block(r, above: 7pt) = block(above: above, below: 0pt, width: 100%, breakable: false)[
+  #entry-head(r.role, resolve-period(r), size: 9.6pt, fill: slate-deep)
+  #let rh = r.at("highlights", default: ())
+  #if rh.len() > 0 [ #v(3pt) #bullets(rh) ]
 ]
+
+#let exp-entry(e, gap: 11pt) = {
+  let roles = e.at("roles", default: ())
+  if roles.len() > 0 {
+    // Nested (multi-role) entry. These are inherently tall (a company with
+    // several roles), so the entry itself is breakable across pages — otherwise
+    // it orphans to the next page and leaves a large gap. We still glue the
+    // company header to its first role (so the header never strands at a page
+    // bottom) and keep each role's bullets together via `sub-role-block`.
+    let loc = e.at("location", default: "")
+    let header = {
+      entry-head(e.company, resolve-period(e))
+      if loc != "" {
+        v(1.5pt)
+        text(size: 9pt, fill: n600)[#text(fill: slate, weight: 600)[#loc]]
+      }
+    }
+    block(below: gap, breakable: true, width: 100%)[
+      // Header + first role glued together (non-breakable) to avoid a stranded
+      // company heading; remaining roles flow and may break between roles.
+      #if roles.len() > 0 {
+        block(breakable: false, width: 100%)[
+          #header
+          #sub-role-block(roles.at(0))
+        ]
+        for r in roles.slice(1) { sub-role-block(r) }
+      } else {
+        header
+      }
+    ]
+  } else {
+    // Flat entry: legacy single-role rendering — kept together as one block.
+    block(below: gap, breakable: false, width: 100%)[
+      #entry-head(e.role, resolve-period(e))
+      #v(1.5pt)
+      #text(size: 9pt, fill: n600)[#joined((
+        text(fill: slate, weight: 600)[#e.company],
+        if e.at("location", default: "") != "" { e.location } else { none },
+      ))]
+      #let h = e.at("highlights", default: ())
+      #if h.len() > 0 [ #v(4pt) #bullets(h) ]
+    ]
+  }
+}
 
 #let proj-entry(p, gap: 11pt) = block(below: gap, breakable: false, width: 100%)[
   #entry-head(p.name, none)

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ResumeView from '@/components/resume/resume-view';
+import DownloadControls from '@/components/resume/download-controls';
 import { fetchResolvedResume } from '@/lib/profile-api';
 import { isAdmin } from '@/lib/admin-auth';
 
@@ -28,12 +29,7 @@ export default async function TailoredResumePage({ params }: TailoredPageProps) 
             Edit Tailoring
           </a>
         )}
-        <a className="resume-action" href={`/api/profiles/${slug}/typst`} download>
-          Download Typst
-        </a>
-        <a className="resume-action" href={`/api/profiles/${slug}/pdf`} download>
-          Download PDF
-        </a>
+        <DownloadControls basePath={`/api/profiles/${slug}`} />
       </div>
       <ResumeView resume={resume} />
     </>
