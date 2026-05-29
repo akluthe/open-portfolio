@@ -143,6 +143,13 @@ export default function ResumeView({ resume }: ResumeViewProps) {
           {resume.projects.map((project) => (
             <article key={project.name} className="experience-item">
               <h3>{project.name}</h3>
+              {project.url && (
+                <p className="project-link">
+                  <a href={project.url} target="_blank" rel="noopener noreferrer">
+                    {project.url.replace(/^https?:\/\//, '')}
+                  </a>
+                </p>
+              )}
               {project.description && <p>{project.description}</p>}
               {project.highlights.length > 0 && (
                 <ul className="experience-highlights">

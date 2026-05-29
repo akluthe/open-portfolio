@@ -87,7 +87,7 @@ type TypstResumeData = {
   contact: { location?: string; email?: string; phone?: string; website?: string };
   skills: Array<{ name: string; keywords: string[] }>;
   experience: TypstExperience[];
-  projects: Array<{ name: string; description?: string; highlights: string[] }>;
+  projects: Array<{ name: string; description?: string; url?: string; highlights: string[] }>;
   education: Array<{ school: string; degree?: string; field?: string; period?: string; highlights: string[] }>;
 };
 
@@ -146,6 +146,7 @@ export function buildResumeData(resume: ResumeDocument): TypstResumeData {
       omitUndefined({
         name: project.name,
         description: project.description,
+        url: project.url,
         highlights: project.highlights ?? []
       }) as TypstResumeData['projects'][number]
   );

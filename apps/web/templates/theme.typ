@@ -134,7 +134,11 @@
 }
 
 #let proj-entry(p, gap: 11pt) = block(below: gap, breakable: false, width: 100%)[
-  #entry-head(p.name, none)
+  #let url = p.at("url", default: "")
+  #let url-label = if url != "" {
+    link(url)[#text(fill: leaf-dark)[#url.replace("https://", "").replace("http://", "")]]
+  } else { none }
+  #entry-head(p.name, url-label)
   #if p.at("description", default: "") != "" [
     #v(1.5pt)
     #text(size: 9pt, fill: n600)[#p.description]
