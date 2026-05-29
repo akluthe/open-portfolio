@@ -30,3 +30,7 @@ obj/
 
 # Local-only seed data (contains real PII; never commit to a public repo)
 infra/seed/
+
+# Local build caches / one-off design artifacts
+.vite/
+/Resume Typst Design.zip
