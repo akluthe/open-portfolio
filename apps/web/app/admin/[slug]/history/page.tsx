@@ -1,25 +1,25 @@
 import { notFound } from 'next/navigation';
-import { currentUser } from '@clerk/nextjs/server';
-import { fetchResumeBySlug } from '@/lib/resume-api';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { fetchResumeBySlug, listResumeVersions } from '@/lib/resume-api';
 import { isAdmin } from '@/lib/admin-auth';
-import ResumeEditForm from '@/components/admin/resume-edit-form';
+import VersionHistory from '@/components/admin/version-history';
 import LogoutButton from '@/components/admin/logout-button';
 
-type AdminPageProps = {
+type HistoryPageProps = {
   params: Promise<{
     slug: string;
   }>;
 };
 
-export default async function AdminPage({ params }: AdminPageProps) {
-  // Check authentication - middleware will redirect if not authenticated
+export const dynamic = 'force-dynamic';
+
+export default async function ResumeHistoryPage({ params }: HistoryPageProps) {
   const user = await currentUser();
 
   if (!user) {
     notFound();
   }
 
-  // Check if user is authorized as admin
   const isAuthorized = await isAdmin();
 
   if (!isAuthorized) {
@@ -28,33 +28,32 @@ export default async function AdminPage({ params }: AdminPageProps) {
         <div className="admin-error">
           <h1>Access Denied</h1>
           <p>Your GitHub account ({user.username}) is not authorized to access the admin panel.</p>
-          <p>Please contact the administrator to request access.</p>
         </div>
       </div>
     );
   }
 
   const { slug } = await params;
-  // Fetch the current resume
   const resume = await fetchResumeBySlug(slug);
 
   if (!resume) {
     notFound();
   }
 
+  const { getToken } = await auth();
+  const token = await getToken();
+  const versions = token ? await listResumeVersions(slug, token) : [];
+
   return (
     <div className="admin-page">
       <div className="admin-header">
         <div>
-          <h1>Edit Resume: {slug}</h1>
-          <p className="admin-user-info">Logged in as: {user.username || user.firstName || user.emailAddresses[0]?.emailAddress}</p>
+          <h1>History: {slug}</h1>
+          <p className="admin-user-info">Every saved version, newest first. Restore is append-only.</p>
         </div>
         <div className="admin-header-actions">
-          <a href={`/admin/${slug}/history`} className="admin-link">
-            History →
-          </a>
-          <a href="/admin/tailoring" className="admin-link">
-            Tailorings →
+          <a href={`/admin/${slug}`} className="admin-link">
+            ← Edit Resume
           </a>
           <a href={`/r/${slug}`} className="admin-link">
             View Public Resume →
@@ -62,8 +61,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
           <LogoutButton />
         </div>
       </div>
-      <ResumeEditForm slug={slug} initialResume={resume} />
+      <VersionHistory slug={slug} versions={versions} kind="resume" />
     </div>
   );
 }
-

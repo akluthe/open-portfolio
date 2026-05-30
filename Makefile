@@ -1,4 +1,4 @@
-.PHONY: up down logs ps db api web api-test web-test test dev seed seed-profile
+.PHONY: up down logs ps db api web api-test web-test test dev seed seed-profile migrate
 
 COMPOSE=infra/compose/docker-compose.yml
 API_PROJECT=apps/api-resume/api-resume.csproj
@@ -32,6 +32,16 @@ down:
 
 db:
 	docker exec -it $(PG_CONTAINER) psql -U postgres -d resume
+
+# Apply schema migrations to the local stack in order. Each file is idempotent
+# (CREATE ... IF NOT EXISTS + guarded backfills), so re-running is safe. For prod,
+# run the same files against the live container as the owning role (see docs/DEPLOY.md).
+migrate:
+	@for f in infra/postgres/migrations/*.sql; do \
+	  echo "Applying $$f ..."; \
+	  docker exec -i $(PG_CONTAINER) psql -U postgres -d resume -v ON_ERROR_STOP=1 < $$f || exit 1; \
+	done
+	@echo "Migrations applied."
 
 # Load the local (gitignored) master resume into the 'main' slug. Idempotent upsert.
 # The seed file is local-only (real PII) and not committed; see infra/seed/README.md.

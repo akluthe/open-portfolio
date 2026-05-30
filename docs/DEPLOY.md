@@ -94,12 +94,32 @@ git pull && docker compose -f docker-compose.prod.yml up -d --build
 docker exec "$PG" pg_dump -U postgres resume | gzip > resume-$(date +%F).sql.gz
 ```
 
-### Schema changes
+### Schema changes / migrations
 
-`init.sql` only runs on a fresh volume. After changing the schema, either apply
-the change by hand (`docker exec -it "$PG" psql -U postgres -d resume`) or recreate
-the volume with `docker compose -f docker-compose.prod.yml down -v` (**drops all
-data**) and re-seed.
+`init.sql` only runs on a fresh volume, so an existing deployment needs migrations
+applied by hand. Each file in `infra/postgres/migrations/` is idempotent
+(`CREATE ... IF NOT EXISTS` + guarded backfills), so re-running is safe.
+
+Apply them in order, as the **owning role** (on the live `talaria-postgres` that is
+the resume DB owner, not `postgres`):
+
+```bash
+PG=<postgres-container>   # e.g. talaria-postgres
+ROLE=<db-owner-role>      # e.g. talaria
+for f in infra/postgres/migrations/*.sql; do
+  echo "Applying $f ..."
+  docker exec -i "$PG" psql -U "$ROLE" -d resume -v ON_ERROR_STOP=1 < "$f"
+done
+```
+
+(Locally: `make migrate`.) Apply migrations **before** rolling the new API image —
+the version-history write path references the `*_versions` tables. Deploy order:
+**migrate → API → web**.
+
+> **Version history** (migration `001`) makes every authenticated resume/tailoring
+> save append an immutable snapshot. The backfill captures each existing row as
+> version 1, so nothing is lost on the first edit after deploying. Restores are
+> append-only (they add a new latest version; they never rewrite the timeline).
 
 ## Troubleshooting
 

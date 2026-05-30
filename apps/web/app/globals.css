@@ -223,6 +223,92 @@ main {
   color: #fff;
 }
 
+/* Version history */
+.version-history {
+  background: #fff;
+  padding: 1.5rem 2rem 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-error-text {
+  color: #b00020;
+  font-weight: 600;
+}
+
+.version-history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.version-history-table th,
+.version-history-table td {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.version-history-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666;
+}
+
+.version-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0a7a2f;
+}
+
+.version-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.version-actions button {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #111;
+  border-radius: 4px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.version-actions button:hover:not(:disabled) {
+  background: #111;
+  color: #fff;
+}
+
+.version-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.version-preview {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #111;
+}
+
+.version-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.version-preview-header button {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #111;
+  border-radius: 4px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .admin-form {
   background: #fff;
   padding: 2rem;
