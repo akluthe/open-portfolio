@@ -1,18 +1,20 @@
 import { notFound } from 'next/navigation';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { isAdmin } from '@/lib/admin-auth';
-import { fetchProfile } from '@/lib/profile-api';
+import { fetchProfile, listProfileVersions } from '@/lib/profile-api';
 import { fetchResumeBySlug } from '@/lib/resume-api';
-import TailoringEditForm from '@/components/admin/tailoring-edit-form';
+import VersionHistory from '@/components/admin/version-history';
 import LogoutButton from '@/components/admin/logout-button';
 
-type AdminTailoringEditPageProps = {
+type HistoryPageProps = {
   params: Promise<{
     slug: string;
   }>;
 };
 
-export default async function AdminTailoringEditPage({ params }: AdminTailoringEditPageProps) {
+export const dynamic = 'force-dynamic';
+
+export default async function TailoringHistoryPage({ params }: HistoryPageProps) {
   const user = await currentUser();
 
   if (!user) {
@@ -27,7 +29,6 @@ export default async function AdminTailoringEditPage({ params }: AdminTailoringE
         <div className="admin-error">
           <h1>Access Denied</h1>
           <p>Your GitHub account ({user.username}) is not authorized to access the admin panel.</p>
-          <p>Please contact the administrator to request access.</p>
         </div>
       </div>
     );
@@ -40,6 +41,7 @@ export default async function AdminTailoringEditPage({ params }: AdminTailoringE
     notFound();
   }
 
+  // Master is needed to resolve overlay versions into a previewable resume.
   const master = await fetchResumeBySlug(profile.baseSlug);
 
   if (!master) {
@@ -48,29 +50,29 @@ export default async function AdminTailoringEditPage({ params }: AdminTailoringE
         <div className="admin-error">
           <h1>Missing master resume</h1>
           <p>
-            This tailoring is based on <code>{profile.baseSlug}</code>, which does not exist. Create
-            that resume first, or edit the profile&apos;s baseSlug.
+            This tailoring is based on <code>{profile.baseSlug}</code>, which does not exist.
           </p>
         </div>
       </div>
     );
   }
 
+  const { getToken } = await auth();
+  const token = await getToken();
+  const versions = token ? await listProfileVersions(slug, token) : [];
+
   return (
     <div className="admin-page">
       <div className="admin-header">
         <div>
-          <h1>Edit Tailoring: {profile.name}</h1>
+          <h1>History: {profile.name}</h1>
           <p className="admin-user-info">
-            <code>{slug}</code> · based on <code>{profile.baseSlug}</code>
+            <code>{slug}</code> · based on <code>{profile.baseSlug}</code> · restore is append-only
           </p>
         </div>
         <div className="admin-header-actions">
-          <a href="/admin/tailoring" className="admin-link">
-            ← All Tailorings
-          </a>
-          <a href={`/admin/tailoring/${slug}/history`} className="admin-link">
-            History →
+          <a href={`/admin/tailoring/${slug}`} className="admin-link">
+            ← Edit Tailoring
           </a>
           <a href={`/t/${slug}`} className="admin-link">
             View Tailored →
@@ -78,7 +80,7 @@ export default async function AdminTailoringEditPage({ params }: AdminTailoringE
           <LogoutButton />
         </div>
       </div>
-      <TailoringEditForm slug={slug} master={master} initialProfile={profile} />
+      <VersionHistory slug={slug} versions={versions} kind="tailoring" master={master} />
     </div>
   );
 }

@@ -8,7 +8,10 @@ import {
   type ResumeSkillGroup,
   tailoringProfileSchema,
   type TailoringProfile,
-  resolveTailoredResume
+  resolveTailoredResume,
+  resumeVersionMetaSchema,
+  resumeVersionListSchema,
+  type ResumeVersionMeta
 } from '@resume-platform/shared-types';
 
 export {
@@ -18,6 +21,9 @@ export {
   type ResumeSkillGroup,
   tailoringProfileSchema,
   type TailoringProfile,
-  resolveTailoredResume
+  resolveTailoredResume,
+  resumeVersionMetaSchema,
+  resumeVersionListSchema,
+  type ResumeVersionMeta
 };
 

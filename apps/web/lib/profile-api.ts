@@ -2,7 +2,9 @@ import { cache } from 'react';
 import {
   resolveTailoredResume,
   tailoringProfileSchema,
+  resumeVersionListSchema,
   type ResumeDocument,
+  type ResumeVersionMeta,
   type TailoringProfile
 } from '@/lib/shared-types';
 import { fetchResumeBySlug } from '@/lib/resume-api';
@@ -90,6 +92,67 @@ export async function upsertProfile(
 
   const json = await response.json();
   return tailoringProfileSchema.parse(json);
+}
+
+// --- Version history (all authenticated). Profile versions store the overlay doc;
+// the UI resolves it against the current master for preview. ---
+
+function authHeaders(token: string): HeadersInit {
+  return { Accept: 'application/json', Authorization: `Bearer ${token}` };
+}
+
+export async function listProfileVersions(
+  slug: string,
+  token: string
+): Promise<ResumeVersionMeta[]> {
+  const response = await fetch(
+    `${getApiBaseUrl()}/profiles/${encodeURIComponent(slug)}/versions`,
+    { headers: authHeaders(token), cache: 'no-store' }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Profile versions list failed (${response.status})`);
+  }
+
+  return resumeVersionListSchema.parse(await response.json());
+}
+
+export async function fetchProfileVersion(
+  slug: string,
+  version: number,
+  token: string
+): Promise<TailoringProfile | null> {
+  const response = await fetch(
+    `${getApiBaseUrl()}/profiles/${encodeURIComponent(slug)}/versions/${version}`,
+    { headers: authHeaders(token), cache: 'no-store' }
+  );
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Profile version fetch failed (${response.status})`);
+  }
+
+  return tailoringProfileSchema.parse(await response.json());
+}
+
+export async function restoreProfileVersion(
+  slug: string,
+  version: number,
+  token: string
+): Promise<TailoringProfile> {
+  const response = await fetch(
+    `${getApiBaseUrl()}/profiles/${encodeURIComponent(slug)}/versions/${version}/restore`,
+    { method: 'POST', headers: authHeaders(token), cache: 'no-store' }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Profile version restore failed (${response.status})`);
+  }
+
+  return tailoringProfileSchema.parse(await response.json());
 }
 
 export async function deleteProfile(slug: string, token: string): Promise<void> {

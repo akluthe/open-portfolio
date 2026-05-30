@@ -96,6 +96,74 @@ public class ProfileDbServiceTests : IClassFixture<PostgresResumeFixture>
         Assert.Null(await CreateSut().GetProfileJsonBySlugAsync(slug));
     }
 
+    [Fact]
+    public async Task UpsertProfileAsync_appends_version_and_increments_on_each_save()
+    {
+        await _fixture.ResetAsync();
+        var slug = CreateSlug();
+        var sut = CreateSut();
+
+        await sut.UpsertProfileAsync(slug, CreateProfileJson("V1", "main"), actor: "user_123");
+        await sut.UpsertProfileAsync(slug, CreateProfileJson("V2", "main"));
+
+        using var doc = JsonDocument.Parse(await sut.ListVersionsAsync(slug));
+        var versions = doc.RootElement;
+        Assert.Equal(2, versions.GetArrayLength());
+        Assert.Equal(2, versions[0].GetProperty("version").GetInt32());
+        Assert.Equal(1, versions[1].GetProperty("version").GetInt32());
+        Assert.Equal("user_123", versions[1].GetProperty("createdBy").GetString());
+    }
+
+    [Fact]
+    public async Task GetVersionJsonAsync_returns_doc_for_version_and_null_when_missing()
+    {
+        await _fixture.ResetAsync();
+        var slug = CreateSlug();
+        var sut = CreateSut();
+        var v1Json = CreateProfileJson("Overlay V1", "main");
+
+        await sut.UpsertProfileAsync(slug, v1Json);
+        await sut.UpsertProfileAsync(slug, CreateProfileJson("Overlay V2", "main"));
+
+        AssertJsonEqual(v1Json, await sut.GetVersionJsonAsync(slug, 1));
+        Assert.Null(await sut.GetVersionJsonAsync(slug, 99));
+    }
+
+    [Fact]
+    public async Task RestoreVersionAsync_reapplies_old_content_and_grows_history()
+    {
+        await _fixture.ResetAsync();
+        var slug = CreateSlug();
+        var sut = CreateSut();
+        var v1Json = CreateProfileJson("Original Overlay", "main");
+
+        await sut.UpsertProfileAsync(slug, v1Json);
+        await sut.UpsertProfileAsync(slug, CreateProfileJson("Changed Overlay", "main"));
+
+        var restored = await sut.RestoreVersionAsync(slug, 1, actor: "user_admin");
+
+        AssertJsonEqual(v1Json, restored);
+        AssertJsonEqual(v1Json, await sut.GetProfileJsonBySlugAsync(slug));
+
+        using var doc = JsonDocument.Parse(await sut.ListVersionsAsync(slug));
+        Assert.Equal(3, doc.RootElement.GetArrayLength());
+        Assert.Equal("Restored from version 1", doc.RootElement[0].GetProperty("changeSummary").GetString());
+    }
+
+    [Fact]
+    public async Task DeleteProfileAsync_cascades_version_history()
+    {
+        await _fixture.ResetAsync();
+        var slug = CreateSlug();
+        var sut = CreateSut();
+        await sut.UpsertProfileAsync(slug, CreateProfileJson("Doomed", "main"));
+
+        await sut.DeleteProfileAsync(slug);
+
+        using var doc = JsonDocument.Parse(await sut.ListVersionsAsync(slug));
+        Assert.Equal(0, doc.RootElement.GetArrayLength());
+    }
+
     private ProfileDbService CreateSut() => new(_fixture.ConnectionString);
 
     private static string CreateSlug() => $"profile-{Guid.NewGuid():N}";

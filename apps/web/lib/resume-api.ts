@@ -1,5 +1,10 @@
 import { cache } from 'react';
-import { resumeSchema, type ResumeDocument } from '@/lib/shared-types';
+import {
+  resumeSchema,
+  resumeVersionListSchema,
+  type ResumeDocument,
+  type ResumeVersionMeta
+} from '@/lib/shared-types';
 
 function getApiBaseUrl() {
   const value = process.env.RESUME_API;
@@ -62,4 +67,64 @@ export async function updateResumeBySlug(
 
   const json = await response.json();
   return resumeSchema.parse(json);
+}
+
+// --- Version history (all authenticated; the .NET endpoints require a Bearer token). ---
+
+function authHeaders(token: string): HeadersInit {
+  return { Accept: 'application/json', Authorization: `Bearer ${token}` };
+}
+
+export async function listResumeVersions(
+  slug: string,
+  token: string
+): Promise<ResumeVersionMeta[]> {
+  const response = await fetch(
+    `${getApiBaseUrl()}/resumes/${encodeURIComponent(slug)}/versions`,
+    { headers: authHeaders(token), cache: 'no-store' }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Resume versions list failed (${response.status})`);
+  }
+
+  return resumeVersionListSchema.parse(await response.json());
+}
+
+export async function fetchResumeVersion(
+  slug: string,
+  version: number,
+  token: string
+): Promise<ResumeDocument | null> {
+  const response = await fetch(
+    `${getApiBaseUrl()}/resumes/${encodeURIComponent(slug)}/versions/${version}`,
+    { headers: authHeaders(token), cache: 'no-store' }
+  );
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Resume version fetch failed (${response.status})`);
+  }
+
+  return resumeSchema.parse(await response.json());
+}
+
+export async function restoreResumeVersion(
+  slug: string,
+  version: number,
+  token: string
+): Promise<ResumeDocument> {
+  const response = await fetch(
+    `${getApiBaseUrl()}/resumes/${encodeURIComponent(slug)}/versions/${version}/restore`,
+    { method: 'POST', headers: authHeaders(token), cache: 'no-store' }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Resume version restore failed (${response.status})`);
+  }
+
+  return resumeSchema.parse(await response.json());
 }

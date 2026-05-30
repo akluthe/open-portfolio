@@ -147,7 +147,7 @@ app.MapGet(
 // PUT /resumes/{slug} using service - requires authentication
 app.MapPut(
     "/resumes/{slug}",
-    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, HttpRequest request, IResumeDbService db) =>
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, HttpRequest request, System.Security.Claims.ClaimsPrincipal user, IResumeDbService db) =>
     {
 
         try
@@ -178,8 +178,8 @@ app.MapPut(
                 );
             }
 
-            // Upsert the resume
-            await db.UpsertResumeAsync(slug, json);
+            // Upsert the resume and append a version (actor + optional note for the audit trail)
+            await db.UpsertResumeAsync(slug, json, ActorOf(user), ChangeSummaryOf(request));
 
             // Return the updated document
             return Results.Content(json, "application/json");
@@ -196,6 +196,36 @@ app.MapPut(
                 title: "Internal server error"
             );
         }
+    }
+);
+
+// --- Resume version history (admin-only; history can hold content removed from the
+// public resume, so these are all authenticated unlike the public GET /resumes/{slug}). ---
+
+// GET /resumes/{slug}/versions - metadata list, newest first.
+app.MapGet(
+    "/resumes/{slug}/versions",
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, IResumeDbService db) =>
+        Results.Content(await db.ListVersionsAsync(slug), "application/json")
+);
+
+// GET /resumes/{slug}/versions/{version} - full doc for one version.
+app.MapGet(
+    "/resumes/{slug}/versions/{version:int}",
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, int version, IResumeDbService db) =>
+    {
+        var json = await db.GetVersionJsonAsync(slug, version);
+        return json is not null ? Results.Content(json, "application/json") : Results.NotFound();
+    }
+);
+
+// POST /resumes/{slug}/versions/{version}/restore - re-apply a version as the new latest.
+app.MapPost(
+    "/resumes/{slug}/versions/{version:int}/restore",
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, int version, System.Security.Claims.ClaimsPrincipal user, IResumeDbService db) =>
+    {
+        var json = await db.RestoreVersionAsync(slug, version, ActorOf(user));
+        return json is not null ? Results.Content(json, "application/json") : Results.NotFound();
     }
 );
 
@@ -221,7 +251,7 @@ app.MapGet(
 // Zod tailoringProfileSchema in the web tier before this is called.
 app.MapPut(
     "/profiles/{slug}",
-    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, HttpRequest request, IProfileDbService db) =>
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, HttpRequest request, System.Security.Claims.ClaimsPrincipal user, IProfileDbService db) =>
     {
         try
         {
@@ -248,7 +278,7 @@ app.MapPut(
                 );
             }
 
-            await db.UpsertProfileAsync(slug, json);
+            await db.UpsertProfileAsync(slug, json, ActorOf(user), ChangeSummaryOf(request));
 
             return Results.Content(json, "application/json");
         }
@@ -278,4 +308,42 @@ app.MapDelete(
     }
 );
 
+// --- Tailoring-profile version history (admin-only, mirrors the resume endpoints). ---
+
+app.MapGet(
+    "/profiles/{slug}/versions",
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, IProfileDbService db) =>
+        Results.Content(await db.ListVersionsAsync(slug), "application/json")
+);
+
+app.MapGet(
+    "/profiles/{slug}/versions/{version:int}",
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, int version, IProfileDbService db) =>
+    {
+        var json = await db.GetVersionJsonAsync(slug, version);
+        return json is not null ? Results.Content(json, "application/json") : Results.NotFound();
+    }
+);
+
+app.MapPost(
+    "/profiles/{slug}/versions/{version:int}/restore",
+    [Microsoft.AspNetCore.Authorization.Authorize] async (string slug, int version, System.Security.Claims.ClaimsPrincipal user, IProfileDbService db) =>
+    {
+        var json = await db.RestoreVersionAsync(slug, version, ActorOf(user));
+        return json is not null ? Results.Content(json, "application/json") : Results.NotFound();
+    }
+);
+
 app.Run();
+
+// Audit-trail helpers: who saved (Clerk subject claim) and an optional human note
+// (X-Change-Summary header forwarded by the web tier). Both are best-effort/nullable.
+static string? ActorOf(System.Security.Claims.ClaimsPrincipal user) =>
+    user.FindFirst("sub")?.Value
+    ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+static string? ChangeSummaryOf(HttpRequest request)
+{
+    var value = request.Headers["X-Change-Summary"].ToString();
+    return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}
