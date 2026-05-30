@@ -4,6 +4,8 @@ import { fetchResumeBySlug } from '@/lib/resume-api';
 import { isAdmin } from '@/lib/admin-auth';
 import ResumeEditForm from '@/components/admin/resume-edit-form';
 import LogoutButton from '@/components/admin/logout-button';
+import Icon from '@/components/ui/icon';
+import AppBar from '@/components/ui/app-bar';
 
 type AdminPageProps = {
   params: Promise<{
@@ -43,24 +45,25 @@ export default async function AdminPage({ params }: AdminPageProps) {
   }
 
   return (
-    <div className="admin-page">
-      <div className="admin-header">
-        <div>
-          <h1>Edit Resume: {slug}</h1>
-          <p className="admin-user-info">Logged in as: {user.username || user.firstName || user.emailAddresses[0]?.emailAddress}</p>
+    <div className="app">
+      <AppBar active="Resumes" right={<LogoutButton />} />
+      <div className="sub-head">
+        <div className="grow">
+          <div className="crumbs">
+            <a href={`/r/${slug}`}>Resumes</a>
+            <span className="sep">/</span>
+            <span style={{ color: 'var(--ink-2)' }}>{slug}</span>
+          </div>
+          <div className="row gap12" style={{ alignItems: 'baseline', marginTop: 4 }}>
+            <span style={{ fontFamily: 'var(--serif)', fontSize: 30, letterSpacing: '-.3px' }}>
+              Edit — {resume.basics.name}
+            </span>
+            <span className="pill pill-master">Master</span>
+          </div>
         </div>
-        <div className="admin-header-actions">
-          <a href={`/admin/${slug}/history`} className="admin-link">
-            History →
-          </a>
-          <a href="/admin/tailoring" className="admin-link">
-            Tailorings →
-          </a>
-          <a href={`/r/${slug}`} className="admin-link">
-            View Public Resume →
-          </a>
-          <LogoutButton />
-        </div>
+        <a className="btn btn-ghost btn-sm" href={`/admin/${slug}/history`}>
+          <Icon name="history" size={14} /> Version history
+        </a>
       </div>
       <ResumeEditForm slug={slug} initialResume={resume} />
     </div>

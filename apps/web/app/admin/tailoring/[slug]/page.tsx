@@ -5,6 +5,8 @@ import { fetchProfile } from '@/lib/profile-api';
 import { fetchResumeBySlug } from '@/lib/resume-api';
 import TailoringEditForm from '@/components/admin/tailoring-edit-form';
 import LogoutButton from '@/components/admin/logout-button';
+import AppBar from '@/components/ui/app-bar';
+import Icon from '@/components/ui/icon';
 
 type AdminTailoringEditPageProps = {
   params: Promise<{
@@ -57,26 +59,35 @@ export default async function AdminTailoringEditPage({ params }: AdminTailoringE
   }
 
   return (
-    <div className="admin-page">
-      <div className="admin-header">
-        <div>
-          <h1>Edit Tailoring: {profile.name}</h1>
-          <p className="admin-user-info">
-            <code>{slug}</code> · based on <code>{profile.baseSlug}</code>
-          </p>
+    <div className="app">
+      <AppBar active="Tailoring" right={<LogoutButton />} />
+      <div className="sub-head">
+        <div className="grow">
+          <div className="crumbs">
+            <a href="/admin/tailoring">Tailoring</a>
+            <span className="sep">/</span>
+            <span style={{ color: 'var(--ink-2)' }}>{slug}</span>
+          </div>
+          <div className="row gap12" style={{ alignItems: 'baseline', marginTop: 4 }}>
+            <span style={{ fontFamily: 'var(--serif)', fontSize: 30, letterSpacing: '-.3px' }}>
+              {profile.name}
+            </span>
+            <span className="pill pill-draft">Draft</span>
+          </div>
+          <div className="doc-meta" style={{ marginTop: 7 }}>
+            <span>
+              <Icon
+                name="layers"
+                size={12}
+                style={{ verticalAlign: '-2px', marginRight: 4, color: 'var(--acc-deep)' }}
+              />
+              overlay on /r/{profile.baseSlug}
+            </span>
+          </div>
         </div>
-        <div className="admin-header-actions">
-          <a href="/admin/tailoring" className="admin-link">
-            ← All Tailorings
-          </a>
-          <a href={`/admin/tailoring/${slug}/history`} className="admin-link">
-            History →
-          </a>
-          <a href={`/t/${slug}`} className="admin-link">
-            View Tailored →
-          </a>
-          <LogoutButton />
-        </div>
+        <a className="btn btn-ghost btn-sm" href={`/t/${slug}`}>
+          <Icon name="eye" size={14} /> Open /t/{slug}
+        </a>
       </div>
       <TailoringEditForm slug={slug} master={master} initialProfile={profile} />
     </div>

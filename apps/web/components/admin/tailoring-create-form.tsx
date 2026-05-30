@@ -52,20 +52,19 @@ export default function TailoringCreateForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="admin-form">
-      <section className="admin-section">
-        <h2>New Tailoring</h2>
+    <form onSubmit={handleSubmit}>
+      <div className="card card-pad">
+        <span className="sb-title">New tailoring</span>
+
         {error && (
-          <div className="admin-error" role="alert">
-            <strong>Error:</strong> {error}
-          </div>
+          <div className="alert alert-error" role="alert">{error}</div>
         )}
-        <div className="admin-field">
-          <label htmlFor="new-name">
-            Display name <span className="required">*</span>
-          </label>
+
+        <div className="field">
+          <label className="lbl" htmlFor="new-name">Display name <span className="req">*</span></label>
           <input
             id="new-name"
+            className="input"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -73,12 +72,12 @@ export default function TailoringCreateForm() {
             required
           />
         </div>
-        <div className="admin-field">
-          <label htmlFor="new-slug">
-            Slug <span className="required">*</span>
-          </label>
+
+        <div className="field">
+          <label className="lbl" htmlFor="new-slug">Slug <span className="req">*</span></label>
           <input
             id="new-slug"
+            className="input"
             type="text"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
@@ -86,12 +85,12 @@ export default function TailoringCreateForm() {
             required
           />
         </div>
-        <div className="admin-field">
-          <label htmlFor="new-base">
-            Base resume slug <span className="required">*</span>
-          </label>
+
+        <div className="field">
+          <label className="lbl" htmlFor="new-base">Base resume slug <span className="req">*</span></label>
           <input
             id="new-base"
+            className="input"
             type="text"
             value={baseSlug}
             onChange={(e) => setBaseSlug(e.target.value)}
@@ -99,12 +98,13 @@ export default function TailoringCreateForm() {
             required
           />
         </div>
-        <div className="admin-actions">
-          <button type="submit" disabled={isSubmitting} className="admin-button-primary">
-            {isSubmitting ? 'Creating...' : 'Create & Edit'}
+
+        <div style={{ marginTop: 16 }}>
+          <button className="btn btn-acc" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating…' : 'Create & edit'}
           </button>
         </div>
-      </section>
+      </div>
     </form>
   );
 }

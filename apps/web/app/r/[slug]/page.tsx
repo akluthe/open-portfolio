@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ResumeView from '@/components/resume/resume-view';
 import DownloadControls from '@/components/resume/download-controls';
+import Icon from '@/components/ui/icon';
 import { fetchResumeBySlug } from '@/lib/resume-api';
 import { isAdmin } from '@/lib/admin-auth';
 
@@ -22,17 +23,21 @@ export default async function ResumePage({ params }: ResumePageProps) {
   const userIsAdmin = await isAdmin();
 
   return (
-    <>
-      <div className="resume-actions" aria-label="Resume downloads">
+    <div className="app">
+      <div className="r-toolbar" aria-label="Resume actions">
         {userIsAdmin && (
-          <a className="resume-action" href={`/admin/${slug}`}>
-            Edit Resume
+          <a className="btn btn-ghost btn-sm" href={`/admin/${slug}`}>
+            <Icon name="edit" size={15} /> Edit
           </a>
         )}
         <DownloadControls basePath={`/api/resumes/${slug}`} />
       </div>
-      <ResumeView resume={resume} />
-    </>
+      <div className="paper-stage">
+        <div className="paper-sheet">
+          <ResumeView resume={resume} />
+        </div>
+      </div>
+    </div>
   );
 }
 

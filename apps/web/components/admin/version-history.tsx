@@ -9,6 +9,7 @@ import {
   type TailoringProfile
 } from '@/lib/shared-types';
 import ResumeView from '@/components/resume/resume-view';
+import Icon from '@/components/ui/icon';
 
 type VersionHistoryProps = {
   slug: string;
@@ -106,68 +107,123 @@ export default function VersionHistory({ slug, kind, master }: VersionHistoryPro
   }
 
   return (
-    <div className="version-history">
-      {error && <p className="admin-error-text" role="alert">{error}</p>}
-
-      {loading ? (
-        <p>Loading version history…</p>
-      ) : versions.length === 0 ? (
-        <p>No saved versions yet. They start accumulating from the next save.</p>
-      ) : (
-        <table className="version-history-table">
-          <thead>
-            <tr>
-              <th scope="col">Version</th>
-              <th scope="col">Saved</th>
-              <th scope="col">By</th>
-              <th scope="col">Note</th>
-              <th scope="col" aria-label="Actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {versions.map((v, index) => (
-              <tr key={v.version}>
-                <td>
-                  v{v.version}
-                  {index === 0 && <span className="version-badge"> current</span>}
-                </td>
-                <td>{formatTimestamp(v.createdAt)}</td>
-                <td>{v.createdBy ?? '—'}</td>
-                <td>{v.changeSummary ?? '—'}</td>
-                <td className="version-actions">
-                  <button
-                    type="button"
-                    onClick={() => handlePreview(v.version)}
-                    disabled={busyVersion !== null}
+    <div style={{ display: 'grid', gridTemplateColumns: '1.05fr .95fr', gap: 24, alignItems: 'start' }}>
+      <div className="card card-pad" style={{ padding: '12px 12px' }}>
+        {loading ? (
+          <p className="hint" style={{ padding: 12 }}>Loading…</p>
+        ) : versions.length === 0 ? (
+          <p className="hint" style={{ padding: 12 }}>No saved versions yet.</p>
+        ) : (
+          versions.map((v, index) => {
+            const isCurrent = index === 0;
+            const selected = preview?.version === v.version;
+            return (
+              <div
+                key={v.version}
+                className={'vrow' + (selected ? ' sel' : '')}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '62px 1fr auto',
+                  gap: 14,
+                  alignItems: 'center',
+                  padding: '13px 16px',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  border: selected ? '1px solid var(--acc-soft)' : '1px solid transparent',
+                }}
+                onClick={() => handlePreview(v.version)}
+              >
+                <div className="stamp" style={{ fontSize: 18 }}>
+                  <span style={{ color: 'var(--ink-4)' }}>v</span>
+                  <span className="v">{v.version}</span>
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div className="row gap8" style={{ marginBottom: 3 }}>
+                    <span className="mono" style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>
+                      {formatTimestamp(v.createdAt)}
+                    </span>
+                    {isCurrent && (
+                      <span className="pill pill-pub" style={{ fontSize: 10, padding: '2px 8px 2px 7px' }}>
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      color: 'var(--ink-2)',
+                      lineHeight: 1.4,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
                   >
-                    Preview
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRestore(v.version)}
-                    disabled={busyVersion !== null || index === 0}
-                    title={index === 0 ? 'Already the current version' : undefined}
-                  >
-                    Restore
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+                    {v.changeSummary ?? (v.createdBy ? `by ${v.createdBy}` : '—')}
+                  </div>
+                </div>
+                <div className="row gap8" onClick={e => e.stopPropagation()}>
+                  {isCurrent ? (
+                    <span className="hint" style={{ fontSize: 12 }}>live</span>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-quiet btn-sm"
+                        onClick={() => handlePreview(v.version)}
+                        disabled={busyVersion !== null}
+                      >
+                        <Icon name="eye" size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => handleRestore(v.version)}
+                        disabled={busyVersion !== null}
+                      >
+                        <Icon name="restore" size={14} /> Restore
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
 
-      {preview && (
-        <div className="version-preview" role="dialog" aria-label={`Preview of version ${preview.version}`}>
-          <div className="version-preview-header">
-            <h2>Preview — version {preview.version}</h2>
-            <button type="button" onClick={() => setPreview(null)}>
-              Close
-            </button>
+      <div>
+        {error && (
+          <p className="admin-error-text" role="alert" style={{ marginBottom: 12 }}>
+            {error}
+          </p>
+        )}
+        {preview ? (
+          <>
+            <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div className="preview-tab" style={{ marginBottom: 0 }}>
+                <span className="dot2" style={{ background: 'var(--amber)' }} /> viewing v{preview.version}
+              </div>
+              <button
+                type="button"
+                className="btn btn-acc btn-sm"
+                onClick={() => handleRestore(preview.version)}
+                disabled={busyVersion !== null}
+              >
+                <Icon name="restore" size={14} /> Restore v{preview.version}
+              </button>
+            </div>
+            <div className="preview-frame" style={{ height: 540, overflow: 'hidden' }}>
+              <div style={{ transform: 'scale(.52)', transformOrigin: 'top left', width: '192.3%' }}>
+                <ResumeView resume={preview.resume} pad="44px 52px 60px" />
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="card card-pad">
+            <p className="hint">Select a version on the left to preview it here.</p>
           </div>
-          <ResumeView resume={preview.resume} />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
