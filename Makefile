@@ -1,5 +1,4 @@
-\
-.PHONY: up down logs ps db api web api-test web-test test dev seed
+.PHONY: up down logs ps db api web api-test web-test test dev seed seed-profile
 
 COMPOSE=infra/compose/docker-compose.yml
 API_PROJECT=apps/api-resume/api-resume.csproj
@@ -9,6 +8,8 @@ RESUME_API ?= http://localhost:5152
 FEATURE_ADMIN_EDITING=true
 PG_CONTAINER=resume-platform-postgres-1
 SEED_FILE=infra/seed/resume-main.json
+PROFILE_SLUG ?= databank-engmgr
+PROFILE_FILE ?= infra/seed/databank-tailoring.json
 
 up:
 	docker compose -f $(COMPOSE) up -d
@@ -41,6 +42,18 @@ seed:
 	   printf "\$$seed\$$::jsonb, NOW()) ON CONFLICT (slug) DO UPDATE SET doc = EXCLUDED.doc, last_mod_tsp = NOW();\n"; \
 	 } | docker exec -i $(PG_CONTAINER) psql -U postgres -d resume -v ON_ERROR_STOP=1
 	@echo "Seeded 'main' from $(SEED_FILE)."
+
+# Load a local (gitignored) tailoring overlay into the profiles table. Idempotent
+# upsert. Override PROFILE_SLUG / PROFILE_FILE for other tailorings. The committed
+# init.sql only seeds a bare example overlay; the real, fully-tailored overlay is
+# local-only and must be loaded this way (or it shows up barely tailored).
+seed-profile:
+	@test -f $(PROFILE_FILE) || { echo "Missing $(PROFILE_FILE) — local-only seed, not in git."; exit 1; }
+	@{ printf "SET client_encoding TO 'UTF8';\nINSERT INTO profiles(slug, doc) VALUES ('$(PROFILE_SLUG)', \$$seed\$$"; \
+	   cat $(PROFILE_FILE); \
+	   printf "\$$seed\$$::jsonb) ON CONFLICT (slug) DO UPDATE SET doc = EXCLUDED.doc, last_mod_tsp = NOW();\n"; \
+	 } | docker exec -i $(PG_CONTAINER) psql -U postgres -d resume -v ON_ERROR_STOP=1
+	@echo "Seeded profile '$(PROFILE_SLUG)' from $(PROFILE_FILE)."
 
 api:
 	dotnet watch run --project $(API_PROJECT)
