@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { fetchResolvedResume } from '@/lib/profile-api';
 import { normalizeTypstStyle } from '@/lib/resume-typst';
 import { buildTypstSource } from '@/lib/typst-pdf';
+import { buildResumeFilename } from '@/lib/resume-filename';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
@@ -14,7 +15,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const style = normalizeTypstStyle(request.nextUrl.searchParams.get('style'));
     const typstSource = await buildTypstSource(resume, style);
-    const filename = `${slug.replace(/[^a-zA-Z0-9_-]/g, '_')}.typ`;
+    const filename = buildResumeFilename(resume, 'typ', {
+      slug,
+      fallbackDate: new Date().toISOString().slice(0, 10)
+    });
 
     return new NextResponse(typstSource, {
       status: 200,
