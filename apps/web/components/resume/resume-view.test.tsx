@@ -68,14 +68,16 @@ function buildResume(overrides: Partial<ResumeDocument> = {}): ResumeDocument {
 }
 
 describe('ResumeView', () => {
-  it('renders the primary resume header and contact line', () => {
+  it('renders the primary resume header and stacked contact block', () => {
     render(<ResumeView resume={buildResume()} />);
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Ada Lovelace');
     expect(screen.getByText('Software Architect')).toBeInTheDocument();
-    expect(
-      screen.getByText('London, UK · ada@example.com · 555-0100 · https://ada.dev')
-    ).toBeInTheDocument();
+    // Letterpress renders contact lines stacked; the website drops its protocol.
+    expect(screen.getByText('London, UK')).toBeInTheDocument();
+    expect(screen.getByText('ada@example.com')).toBeInTheDocument();
+    expect(screen.getByText('555-0100')).toBeInTheDocument();
+    expect(screen.getByText('ada.dev')).toBeInTheDocument();
   });
 
   it('falls back to the root summary when basics summary is missing', () => {
@@ -109,7 +111,7 @@ describe('ResumeView', () => {
     expect(screen.getByText('Jan 2020 – Dec 2021')).toBeInTheDocument();
   });
 
-  it('renders a nested entry with the company once and a header per sub-role', () => {
+  it('renders a nested entry with the company once and a row per sub-role', () => {
     const resume = buildResume({
       experience: [
         {
@@ -128,13 +130,12 @@ describe('ResumeView', () => {
 
     render(<ResumeView resume={resume} />);
 
-    // Company is the prominent (h3) heading, shown once.
-    const companyHeadings = screen.getAllByRole('heading', { level: 3, name: 'Anheuser-Busch InBev' });
-    expect(companyHeadings).toHaveLength(1);
+    // Company name is shown once (as the .r-co line).
+    expect(screen.getAllByText('Anheuser-Busch InBev')).toHaveLength(1);
 
-    // Each sub-role gets its own header.
-    expect(screen.getByRole('heading', { level: 4, name: 'Zone Integrations Lead' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 4, name: 'Tech Lead' })).toBeInTheDocument();
+    // Each sub-role renders its own role line.
+    expect(screen.getByText('Zone Integrations Lead')).toBeInTheDocument();
+    expect(screen.getByText('Tech Lead')).toBeInTheDocument();
 
     // Sub-role periods and highlights render.
     expect(screen.getByText('Feb 2026 – Present')).toBeInTheDocument();

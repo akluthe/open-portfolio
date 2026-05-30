@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Icon from '@/components/ui/icon';
 
 /**
  * Layout styles offered for PDF/Typst export. Kept in sync with `TYPST_STYLES`
@@ -30,10 +31,10 @@ export default function DownloadControls({ basePath }: DownloadControlsProps) {
 
   return (
     <>
-      <label className="resume-style">
-        <span className="resume-style-label">Layout</span>
+      <label className="r-style">
+        <span className="r-style-label">Style</span>
         <select
-          className="resume-style-select"
+          className="select"
           value={style}
           onChange={(event) => setStyle(event.target.value as typeof style)}
           aria-label="Resume layout style"
@@ -45,11 +46,12 @@ export default function DownloadControls({ basePath }: DownloadControlsProps) {
           ))}
         </select>
       </label>
-      <a className="resume-action" href={`${basePath}/pdf${query}`} download>
-        Download PDF
+      <div className="spacer" />
+      <a className="btn btn-ghost btn-sm" href={`${basePath}/typst${query}`} download>
+        <Icon name="download" size={15} /> Typst
       </a>
-      <a className="resume-action" href={`${basePath}/typst${query}`} download>
-        Download Typst
+      <a className="btn btn-acc btn-sm" href={`${basePath}/pdf${query}`} download>
+        <Icon name="download" size={15} /> Download PDF
       </a>
     </>
   );

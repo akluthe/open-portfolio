@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ResumeView from '@/components/resume/resume-view';
 import DownloadControls from '@/components/resume/download-controls';
+import Icon from '@/components/ui/icon';
 import { fetchResolvedResume } from '@/lib/profile-api';
 import { isAdmin } from '@/lib/admin-auth';
 
@@ -22,17 +23,22 @@ export default async function TailoredResumePage({ params }: TailoredPageProps) 
   const userIsAdmin = await isAdmin();
 
   return (
-    <>
-      <div className="resume-actions" aria-label="Resume downloads">
+    <div className="app">
+      <div className="r-toolbar" aria-label="Resume actions">
+        <span className="pill pill-master">Tailored</span>
         {userIsAdmin && (
-          <a className="resume-action" href={`/admin/tailoring/${slug}`}>
-            Edit Tailoring
+          <a className="btn btn-ghost btn-sm" href={`/admin/tailoring/${slug}`}>
+            <Icon name="edit" size={15} /> Edit tailoring
           </a>
         )}
         <DownloadControls basePath={`/api/profiles/${slug}`} />
       </div>
-      <ResumeView resume={resume} />
-    </>
+      <div className="paper-stage">
+        <div className="paper-sheet">
+          <ResumeView resume={resume} />
+        </div>
+      </div>
+    </div>
   );
 }
 

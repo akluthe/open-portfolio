@@ -5,6 +5,7 @@ import { fetchProfile } from '@/lib/profile-api';
 import { fetchResumeBySlug } from '@/lib/resume-api';
 import VersionHistory from '@/components/admin/version-history';
 import LogoutButton from '@/components/admin/logout-button';
+import AppBar from '@/components/ui/app-bar';
 
 type HistoryPageProps = {
   params: Promise<{
@@ -58,25 +59,25 @@ export default async function TailoringHistoryPage({ params }: HistoryPageProps)
   }
 
   return (
-    <div className="admin-page">
-      <div className="admin-header">
-        <div>
-          <h1>History: {profile.name}</h1>
-          <p className="admin-user-info">
-            <code>{slug}</code> · based on <code>{profile.baseSlug}</code> · restore is append-only
-          </p>
+    <div className="app">
+      <AppBar active="Tailoring" right={<LogoutButton />} />
+      <div className="page page-wide">
+        <div className="crumbs" style={{ marginBottom: 4 }}>
+          <a href="/admin/tailoring">Resumes</a>
+          <span className="sep">/</span>
+          <a href={`/admin/tailoring/${slug}`}>{slug}</a>
+          <span className="sep">/</span>
+          <span style={{ color: 'var(--ink-2)' }}>history</span>
         </div>
-        <div className="admin-header-actions">
-          <a href={`/admin/tailoring/${slug}`} className="admin-link">
-            ← Edit Tailoring
-          </a>
-          <a href={`/t/${slug}`} className="admin-link">
-            View Tailored →
-          </a>
-          <LogoutButton />
+        <div className="page-head" style={{ marginBottom: 24 }}>
+          <div>
+            <div className="eyebrow">Version history</div>
+            <h1 className="page-title">Version history</h1>
+            <p className="page-sub">Every save is a stamped version. Preview any point in time, then restore it as a new version — nothing is lost.</p>
+          </div>
         </div>
+        <VersionHistory slug={slug} kind="tailoring" master={master} />
       </div>
-      <VersionHistory slug={slug} kind="tailoring" master={master} />
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ResumeDocument, ResumeExperience } from '@/lib/shared-types';
 import { resumeSchema } from '@/lib/shared-types';
+import Icon from '@/components/ui/icon';
+import ResumeView from '@/components/resume/resume-view';
 
 type ResumeEditFormProps = {
   slug: string;
@@ -158,157 +160,200 @@ export default function ResumeEditForm({ slug, initialResume }: ResumeEditFormPr
     }
   };
 
+  // Live preview document derived from current form state so the right-hand
+  // pane updates as the user types. Mirrors the shape handleSubmit produces
+  // (without filtering empties — we want raw, in-progress edits visible).
+  const previewDoc: ResumeDocument = {
+    ...initialResume,
+    basics: {
+      name: basics.name,
+      title: basics.title,
+      summary: basics.summary || undefined
+    },
+    experience
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="admin-form">
-      {error && (
-        <div className="admin-error" role="alert">
-          <strong>Error:</strong> {error}
-        </div>
-      )}
+    <form onSubmit={handleSubmit}>
+      <div className="split">
+        <div className="split-form">
+          {error && <div className="alert alert-error">{error}</div>}
+          {success && <div className="alert alert-ok">Resume updated — redirecting…</div>}
 
-      {success && (
-        <div className="admin-success" role="alert">
-          Resume updated successfully! Redirecting...
-        </div>
-      )}
-
-      <section className="admin-section">
-        <h2>Basics</h2>
-        <div className="admin-field">
-          <label htmlFor="name">
-            Name <span className="required">*</span>
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={basics.name}
-            onChange={(e) => handleBasicsChange('name', e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="admin-field">
-          <label htmlFor="title">
-            Title <span className="required">*</span>
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={basics.title}
-            onChange={(e) => handleBasicsChange('title', e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="admin-field">
-          <label htmlFor="summary">Summary</label>
-          <textarea
-            id="summary"
-            value={basics.summary}
-            onChange={(e) => handleBasicsChange('summary', e.target.value)}
-            rows={4}
-          />
-        </div>
-      </section>
-
-      <section className="admin-section">
-        <div className="admin-section-header">
-          <h2>Experience</h2>
-          <button type="button" onClick={addExperienceEntry} className="admin-button-secondary">
-            + Add Experience
-          </button>
-        </div>
-
-        {experience.map((exp, expIndex) => (
-          <div key={expIndex} className="admin-entry">
-            <div className="admin-entry-header">
-              <h3>Experience Entry {expIndex + 1}</h3>
-              {experience.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeExperienceEntry(expIndex)}
-                  className="admin-button-danger"
-                >
-                  Remove
-                </button>
-              )}
+          <div className="section-block">
+            <span className="sb-title">Basics</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="lbl" htmlFor="name">
+                  Name <span className="req">*</span>
+                </label>
+                <input
+                  id="name"
+                  className="input"
+                  type="text"
+                  value={basics.name}
+                  onChange={(e) => handleBasicsChange('name', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="lbl" htmlFor="title">
+                  Title <span className="req">*</span>
+                </label>
+                <input
+                  id="title"
+                  className="input"
+                  type="text"
+                  value={basics.title}
+                  onChange={(e) => handleBasicsChange('title', e.target.value)}
+                  required
+                />
+              </div>
             </div>
-
-            <div className="admin-field">
-              <label htmlFor={`exp-company-${expIndex}`}>
-                Company <span className="required">*</span>
+            <div className="field" style={{ marginTop: 14, marginBottom: 0 }}>
+              <label className="lbl" htmlFor="summary">
+                Summary
               </label>
-              <input
-                id={`exp-company-${expIndex}`}
-                type="text"
-                value={exp.company}
-                onChange={(e) => handleExperienceChange(expIndex, 'company', e.target.value)}
-                required
+              <textarea
+                id="summary"
+                className="textarea"
+                value={basics.summary}
+                onChange={(e) => handleBasicsChange('summary', e.target.value)}
+                rows={3}
               />
-            </div>
-
-            <div className="admin-field">
-              <label htmlFor={`exp-role-${expIndex}`}>
-                Role <span className="required">*</span>
-              </label>
-              <input
-                id={`exp-role-${expIndex}`}
-                type="text"
-                value={exp.role}
-                onChange={(e) => handleExperienceChange(expIndex, 'role', e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="admin-field">
-              <label htmlFor={`exp-period-${expIndex}`}>Period</label>
-              <input
-                id={`exp-period-${expIndex}`}
-                type="text"
-                value={exp.period || ''}
-                onChange={(e) => handleExperienceChange(expIndex, 'period', e.target.value)}
-                placeholder="e.g., 2023–Present"
-              />
-            </div>
-
-            <div className="admin-field">
-              <label>Highlights</label>
-              {exp.highlights.map((highlight, highlightIndex) => (
-                <div key={highlightIndex} className="admin-highlight-row">
-                  <input
-                    type="text"
-                    value={highlight}
-                    onChange={(e) => updateHighlight(expIndex, highlightIndex, e.target.value)}
-                    placeholder="Enter highlight"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeHighlight(expIndex, highlightIndex)}
-                    className="admin-button-danger-small"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => addHighlight(expIndex)}
-                className="admin-button-secondary-small"
-              >
-                + Add Highlight
-              </button>
             </div>
           </div>
-        ))}
-      </section>
 
-      <div className="admin-actions">
-        <button type="submit" disabled={isSubmitting} className="admin-button-primary">
-          {isSubmitting ? 'Saving...' : 'Save Resume'}
-        </button>
-        <a href={`/r/${slug}`} className="admin-button-secondary">
-          Cancel
+          <div className="section-block" style={{ marginBottom: 0 }}>
+            <div className="sb-head">
+              <span className="sb-title">Experience</span>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={addExperienceEntry}>
+                <Icon name="plus" size={14} /> Add experience
+              </button>
+            </div>
+
+            {experience.map((exp, expIndex) => (
+              <div key={expIndex} className="entry">
+                <div className="entry-head">
+                  <h4>Entry {String(expIndex + 1).padStart(2, '0')}</h4>
+                  {experience.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn btn-quiet btn-sm"
+                      onClick={() => removeExperienceEntry(expIndex)}
+                    >
+                      <Icon name="trash" size={14} /> Remove
+                    </button>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1.4fr 1fr',
+                    gap: 12,
+                    marginBottom: 12
+                  }}
+                >
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label className="lbl" htmlFor={`exp-company-${expIndex}`}>
+                      Company <span className="req">*</span>
+                    </label>
+                    <input
+                      id={`exp-company-${expIndex}`}
+                      className="input"
+                      type="text"
+                      value={exp.company}
+                      onChange={(e) => handleExperienceChange(expIndex, 'company', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label className="lbl" htmlFor={`exp-period-${expIndex}`}>
+                      Period
+                    </label>
+                    <input
+                      id={`exp-period-${expIndex}`}
+                      className="input"
+                      type="text"
+                      value={exp.period || ''}
+                      onChange={(e) => handleExperienceChange(expIndex, 'period', e.target.value)}
+                      placeholder="e.g., 2023–Present"
+                    />
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label className="lbl" htmlFor={`exp-role-${expIndex}`}>
+                    Role <span className="req">*</span>
+                  </label>
+                  <input
+                    id={`exp-role-${expIndex}`}
+                    className="input"
+                    type="text"
+                    value={exp.role}
+                    onChange={(e) => handleExperienceChange(expIndex, 'role', e.target.value)}
+                    required
+                  />
+                </div>
+
+                <label className="lbl">Highlights</label>
+                {exp.highlights.map((highlight, highlightIndex) => (
+                  <div key={highlightIndex} className="hl-row">
+                    <Icon name="grip" size={15} style={{ color: 'var(--ink-4)' }} />
+                    <input
+                      className="input"
+                      type="text"
+                      value={highlight}
+                      onChange={(e) => updateHighlight(expIndex, highlightIndex, e.target.value)}
+                      placeholder="Enter highlight"
+                      style={{ padding: '8px 11px', fontSize: 13 }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-quiet btn-icon btn-sm"
+                      onClick={() => removeHighlight(expIndex, highlightIndex)}
+                    >
+                      <Icon name="trash" size={14} />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn-quiet btn-sm"
+                  style={{ marginTop: 4, color: 'var(--acc-deep)' }}
+                  onClick={() => addHighlight(expIndex)}
+                >
+                  <Icon name="plus" size={14} /> Add highlight
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="split-preview">
+          <div className="preview-tab">
+            <span className="dot2" /> live preview · /r/{slug}
+          </div>
+          <div className="preview-frame">
+            <div className="preview-scale">
+              <ResumeView resume={previewDoc} pad="44px 52px 60px" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="savebar">
+        <span className="saved-note">
+          <Icon name="check" size={15} stroke={2.2} /> Edits preview live
+        </span>
+        <div className="spacer" />
+        <a className="btn btn-ghost" href={`/r/${slug}`}>
+          Discard
         </a>
+        <button className="btn btn-acc" type="submit" disabled={isSubmitting}>
+          <Icon name="save" size={15} /> {isSubmitting ? 'Saving…' : 'Save changes'}
+        </button>
       </div>
     </form>
   );
