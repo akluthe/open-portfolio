@@ -52,11 +52,15 @@ if (useClerk)
             );
         }
         
-        // Set the Authority to the Clerk JWKS endpoint
+        // Clerk's OIDC issuer. Setting Authority lets JwtBearer auto-discover the
+        // OpenID configuration at {Authority}/.well-known/openid-configuration and,
+        // from there, the JWKS signing keys. Do NOT set MetadataAddress to the JWKS
+        // URL directly — the metadata retriever expects the discovery document, not
+        // the raw key set, so pointing it at jwks.json loads no signing keys and
+        // every token fails signature validation (401 on all authenticated routes).
         var clerkAuthority = $"https://{clerkInstanceId}.clerk.accounts.dev";
         options.Authority = clerkAuthority;
-        options.MetadataAddress = $"{clerkAuthority}/.well-known/jwks.json";
-        
+
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -66,6 +70,18 @@ if (useClerk)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.FromMinutes(5) // Allow some clock skew
+        };
+
+        // Surface why a token was rejected (e.g. IDX10501 signature, IDX10223 lifetime).
+        // Logs only the exception type/message — never the token or its claims.
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.Error.WriteLine(
+                    $"[JwtBearer] authentication failed: {context.Exception.GetType().Name}: {context.Exception.Message}");
+                return Task.CompletedTask;
+            }
         };
     });
 }
