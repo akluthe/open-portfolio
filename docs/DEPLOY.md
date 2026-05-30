@@ -61,6 +61,26 @@ SQL
 Then `https://yourdomain/r/main` serves it. Admins can also edit live at
 `/admin/main` once signed in.
 
+### Tailoring overlays
+
+`init.sql` seeds only a **bare example** overlay for `databank-engmgr` (headline +
+summary, nothing hidden/reordered). The real, fully-tailored overlays live in the
+gitignored `infra/seed/` and must be loaded the same way as the master — otherwise
+`/t/<slug>` renders barely tailored. Overlays are **index-based against the master**,
+so seed the master first.
+
+```bash
+DOC=$(cat infra/seed/databank-tailoring.json)
+docker exec -i "$PG" psql -U postgres -d resume <<SQL
+SET client_encoding TO 'UTF8';
+INSERT INTO profiles(slug, doc)
+VALUES ('databank-engmgr', \$doc\$${DOC}\$doc\$::jsonb)
+ON CONFLICT (slug) DO UPDATE SET doc = EXCLUDED.doc, last_mod_tsp = NOW();
+SQL
+```
+
+(`make seed-profile` does the same against the local dev DB.)
+
 ## Operations
 
 ```bash
