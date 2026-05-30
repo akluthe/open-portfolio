@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import {
   resolveTailoredResume,
+  resumeVersionListSchema,
   type ResumeDocument,
   type ResumeVersionMeta,
   type TailoringProfile
@@ -12,7 +12,6 @@ import ResumeView from '@/components/resume/resume-view';
 
 type VersionHistoryProps = {
   slug: string;
-  versions: ResumeVersionMeta[];
   // 'resume' versions hold a ResumeDocument; 'tailoring' versions hold an overlay
   // (TailoringProfile) that is resolved against the current master for preview.
   kind: 'resume' | 'tailoring';
@@ -25,16 +24,41 @@ function formatTimestamp(iso: string): string {
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
 }
 
-export default function VersionHistory({ slug, versions, kind, master }: VersionHistoryProps) {
-  const router = useRouter();
+// The list is fetched client-side through the Next.js proxy route (a route handler,
+// the same context that authenticates saves). Fetching it during the server-component
+// render instead would put a short-lived Clerk token on the SSR path and turn any auth
+// hiccup into a full-page crash.
+export default function VersionHistory({ slug, kind, master }: VersionHistoryProps) {
   const apiBase =
     kind === 'resume'
       ? `/api/resumes/${encodeURIComponent(slug)}/versions`
       : `/api/profiles/${encodeURIComponent(slug)}/versions`;
 
+  const [versions, setVersions] = useState<ResumeVersionMeta[]>([]);
+  const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<{ version: number; resume: ResumeDocument } | null>(null);
   const [busyVersion, setBusyVersion] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const loadVersions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(apiBase, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`Could not load version history (${response.status})`);
+      }
+      setVersions(resumeVersionListSchema.parse(await response.json()));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load version history');
+    } finally {
+      setLoading(false);
+    }
+  }, [apiBase]);
+
+  useEffect(() => {
+    loadVersions();
+  }, [loadVersions]);
 
   async function handlePreview(version: number) {
     setError(null);
@@ -73,7 +97,7 @@ export default function VersionHistory({ slug, versions, kind, master }: Version
         throw new Error(`Restore failed (${response.status})`);
       }
       setPreview(null);
-      router.refresh();
+      await loadVersions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to restore');
     } finally {
@@ -85,7 +109,9 @@ export default function VersionHistory({ slug, versions, kind, master }: Version
     <div className="version-history">
       {error && <p className="admin-error-text" role="alert">{error}</p>}
 
-      {versions.length === 0 ? (
+      {loading ? (
+        <p>Loading version history…</p>
+      ) : versions.length === 0 ? (
         <p>No saved versions yet. They start accumulating from the next save.</p>
       ) : (
         <table className="version-history-table">
