@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { auth, currentUser } from '@clerk/nextjs/server';
-import { fetchResumeBySlug, listResumeVersions } from '@/lib/resume-api';
+import { currentUser } from '@clerk/nextjs/server';
+import { fetchResumeBySlug } from '@/lib/resume-api';
 import { isAdmin } from '@/lib/admin-auth';
 import VersionHistory from '@/components/admin/version-history';
 import LogoutButton from '@/components/admin/logout-button';
@@ -40,10 +40,6 @@ export default async function ResumeHistoryPage({ params }: HistoryPageProps) {
     notFound();
   }
 
-  const { getToken } = await auth();
-  const token = await getToken();
-  const versions = token ? await listResumeVersions(slug, token) : [];
-
   return (
     <div className="admin-page">
       <div className="admin-header">
@@ -61,7 +57,7 @@ export default async function ResumeHistoryPage({ params }: HistoryPageProps) {
           <LogoutButton />
         </div>
       </div>
-      <VersionHistory slug={slug} versions={versions} kind="resume" />
+      <VersionHistory slug={slug} kind="resume" />
     </div>
   );
 }

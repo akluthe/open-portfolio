@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { isAdmin } from '@/lib/admin-auth';
-import { fetchProfile, listProfileVersions } from '@/lib/profile-api';
+import { fetchProfile } from '@/lib/profile-api';
 import { fetchResumeBySlug } from '@/lib/resume-api';
 import VersionHistory from '@/components/admin/version-history';
 import LogoutButton from '@/components/admin/logout-button';
@@ -57,10 +57,6 @@ export default async function TailoringHistoryPage({ params }: HistoryPageProps)
     );
   }
 
-  const { getToken } = await auth();
-  const token = await getToken();
-  const versions = token ? await listProfileVersions(slug, token) : [];
-
   return (
     <div className="admin-page">
       <div className="admin-header">
@@ -80,7 +76,7 @@ export default async function TailoringHistoryPage({ params }: HistoryPageProps)
           <LogoutButton />
         </div>
       </div>
-      <VersionHistory slug={slug} versions={versions} kind="tailoring" master={master} />
+      <VersionHistory slug={slug} kind="tailoring" master={master} />
     </div>
   );
 }
